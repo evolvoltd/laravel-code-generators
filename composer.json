@@ -13,5 +13,17 @@
             "email": "aivaras@evolvo.lt"
         }
     ],
+	"autoload": {
+        "psr-4": {
+            "Evolvo\\LaravelCodeGenerators\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Evolvo\\LaravelCodeGenerators\\LaravelCodeGeneratorsServiceProvider"
+            ]
+        }
+},
     "minimum-stability": "stable"
 }
