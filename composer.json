@@ -1,0 +1,17 @@
+{
+    "name": "evolvo/laravel-code-generators",
+    "description": "Artisan commands to generate laravel project code from existing database tables.",
+    "type": "library",
+    "require": {
+        "laravel/framework": "^5.5",
+        "php": ">=7.0.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Aivaras",
+            "email": "aivaras@evolvo.lt"
+        }
+    ],
+    "minimum-stability": "dev"
+}
