@@ -13,6 +13,12 @@ Require the `evolvo/laravel-code-generators` package in your `composer.json` and
 $ composer require evolvo/laravel-code-generators
 ```
 
+add 
+```sh
+Evolvo\LaravelCodeGenerators\LaravelCodeGeneratorsServiceProvider::class
+```
+to config/app.php 'providers' array
+
 ## Usage
 
 1. Create your migrations and run them using `php artisan migrate`.
