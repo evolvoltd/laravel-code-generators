@@ -15,7 +15,7 @@ class AutoGenerateModelCode extends Command
      *
      * @var string
      */
-    protected $signature = 'auto-generate-code {--table=} {--all}';
+    protected $signature = 'scaffold {database_table} {--only-ng}';
 
     /**
      * The console command description.
@@ -31,118 +31,146 @@ class AutoGenerateModelCode extends Command
      */
     public function handle()
     {
-        $table_names = [];
-
-        if($this->option('all')) {
-
-            $tables = DB::select('SHOW TABLES');
-            foreach ($tables as $table) {
-                $table_names[] = $table->{'Tables_in_' . env('DB_DATABASE')};
-            }
-            $table_names = array_keys(array_except(array_flip($table_names), ['migrations', 'password_resets',]));
-        }
-        else{
-            if($this->option('table')!=null) {
-                $table = $this->option('table');
-                //check if table exists
-                if (!DB::getSchemaBuilder()->hasTable($table)) {
-                    $this->error(PHP_EOL . 'Table doesn`t exist.' . PHP_EOL);
-                    exit;
-                }
-                $table_names[] = $table;
-            }
-        }
-
-        if(count($table_names)==0){
-            $this->error(PHP_EOL . 'Please specify table name --table=my_table or add --all flag for all tables.' . PHP_EOL);
+        //check if table exists
+        $table = $this->argument('database_table');
+        if(!DB::getSchemaBuilder()->hasTable($table)) {
+            $this->comment(PHP_EOL . 'Table doesn`t exist.' . PHP_EOL);
             exit;
         }
 
-        //dd($table_names);
-
-
-        foreach($table_names as $table){
         $columns = DB::select('show columns from ' . $table);
         $fillable_columns = [];
         $boolean_columns = [];
         $validation_rules = [];
+        $table_headers = [];
+        $table_columns = [];
+        $angular_model_attributes = [];
+        $form_fields = [];
+        $singular_table_name = (substr($table, strlen($table)-4, 3)=='ies')?(substr($table, 0, -3).'y'):(substr($table, 0, -1));
         foreach ($columns as $value) {
             if(!in_array($value->Field,['id','created_at','updated_at','created_by','updated_by'])){
                 $fillable_columns[] = $value->Field;
 
                 $validation_rules[] = '"' . $value->Field . '" => "required|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type) . '"';
+                $angular_model_attributes[] = $value->Field . ': '. $this->convertDatabaseColumnTypeToAngularType($value->Type).';';
+                $table_headers[] = '<th>'.ucfirst($value->Field).'</th>';
+                $table_columns[] = '<td>{{'.$singular_table_name.'.'.$value->Field.'}}</td>';
+                $form_fields[] =
+                    '<div class="form-group">'.PHP_EOL.
+                    '<label>'.ucfirst($value->Field).'</label>'.PHP_EOL.
+                    '<input type="text" class="form-control" [(ngModel)]="'.$singular_table_name.'.'.$value->Field.'" placeholder="'.ucfirst($value->Field).'">'.PHP_EOL.
+                    '</div>';
             }
 
             if($value->Type=='tinyint(1)')
                 $boolean_columns[] = $value->Field;
-
-
         }
         if(substr($table, -1)=='s')
-        $singular_table_name = substr($table, 0, -1);
-        $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
 
-        //GENERATE BACK-END CODE START
+            $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
+
+        if($this->option('only-ng')){
+            $dir = app_path('Console/Commands/Output/Angular/'.$table.'/');
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-paginated.ts'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-paginated.ts'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummies.component.html'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("DUMMY_HEADERS",implode(PHP_EOL, $table_headers),$file_contents);
+            $file_contents = str_replace("DUMMY_COLUMNS",implode(PHP_EOL, $table_columns),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$table.'.component.html'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummies.component.ts'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$table.'.component.ts'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy.service.ts'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$table.'.service.ts'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy.ts'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("MODEL_ATTRIBUTES",implode(PHP_EOL, $angular_model_attributes),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'.ts'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-detail.component.html'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-detail.component.html'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-detail.component.ts'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-detail.component.ts'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-modal.component.ts'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-modal.component.ts'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-modal.component.html'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("FORM_FIELDS",implode(PHP_EOL, $form_fields),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-modal.component.html'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/app.module.ts'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/app.module.ts'),$file_contents);
+
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/app-routing.module.ts'));
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/app-routing.module.ts'),$file_contents);
 
 
-        //generate model
-        $file_contents = file_get_contents(__DIR__ . '/Templates/Model.php');
-        $file_contents = str_replace("Dummy",$model_name,$file_contents);
-        $file_contents = str_replace("dummy",$table,$file_contents);
-        $file_contents = str_replace("fillable = []",'fillable = ['.PHP_EOL.'        "'.implode('",'.PHP_EOL.'        "',$fillable_columns).'"'.PHP_EOL.'    ]',$file_contents);
-        $file_contents = str_replace("casts = []",'casts = ['.PHP_EOL.'        "'.implode('" => "boolean",'.PHP_EOL.'        "',$boolean_columns).'" => "boolean"'.PHP_EOL.'    ]',$file_contents);
-        $file_contents = str_replace("rules = []",'rules = ['.PHP_EOL.'        '.implode(','.PHP_EOL.'        ',$validation_rules).''.PHP_EOL.'    ]',$file_contents);
+        } else {
+            //GENERATE BACK-END CODE START
+            //generate model
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Laravel/Dummy.php.tpl'));
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $table, $file_contents);
+            $file_contents = str_replace("fillable = []", 'fillable = [' . PHP_EOL . '        "' . implode('",' . PHP_EOL . '        "', $fillable_columns) . '"' . PHP_EOL . '    ]', $file_contents);
+            $file_contents = str_replace("casts = []", 'casts = [' . PHP_EOL . '        "' . implode('" => "boolean",' . PHP_EOL . '        "', $boolean_columns) . '" => "boolean"' . PHP_EOL . '    ]', $file_contents);
 
-        $add_block_comment = File::exists(app_path(''.$model_name.'.php'));
-        file_put_contents(app_path(''.$model_name.'.php'),($add_block_comment?'/*':'').$file_contents.($add_block_comment?'*/':''), FILE_APPEND);
+            file_put_contents(app_path('Test' . $model_name . '.php'), $file_contents);
+            //fill custom translation rules
+
+            //generate controller
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Laravel/DummyControllerUpdated.php.tpl'));
+            $file_contents = str_replace("DummyController", $model_name . 'sController', $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            file_put_contents(app_path('Http/Controllers/Test' . $model_name . 'sController' . '.php'), $file_contents);
 
 
-        //generate controller
-        $file_contents = file_get_contents(__DIR__  .'/Templates/Controller.php');
-        $file_contents = str_replace("DummyController",$model_name.'sController',$file_contents);
-        $file_contents = str_replace("Dummy",$model_name,$file_contents);
-        $add_block_comment = File::exists(app_path('Http/Controllers/'.$model_name.'sController.php'));
-        file_put_contents(app_path('Http/Controllers/'.$model_name.'sController.php'),($add_block_comment?'/*':'').$file_contents.($add_block_comment?'*/':''), FILE_APPEND);
+            $dir = app_path('Http/Requests/' . $model_name . '/');
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            //generate request class
+            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Laravel/Requests/Dummy/StoreOrUpdate.php.tpl'));
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("return []", 'return [' . PHP_EOL . '        ' . implode(',' . PHP_EOL . '        ', $validation_rules) . '' . PHP_EOL . '    ]', $file_contents);
+            file_put_contents(app_path('Http/Requests/' . $model_name . '/StoreOrUpdate' . '.php'), $file_contents);
+        }
 
+        $this->info("Well Done!");
+        //generate policy
+        //put policy to policies list
 
-        //generate policies
-        Artisan::call("make:policy", ["name"=> $model_name."Policy", "--model"=>$model_name]);
-
-        //add policies to AuthServiceProvider
-        $file_contents = file_get_contents(app_path('Providers/AuthServiceProvider.php'));
-        $file_contents = str_replace("protected \$policies = [",
-            "protected \$policies = [".PHP_EOL.
-            "        'App\\".$model_name."' => 'App\\Policies\\".$model_name."Policy',"
-            ,$file_contents);
-        file_put_contents(app_path('Providers/AuthServiceProvider.php'), $file_contents);
-
-        //edit policy methods
-        //
-
-         //genereate routes
-         $file_contents = PHP_EOL."    Route::apiResource('".str_replace('_','-', strtolower($table))."', '".$model_name."sController');";
-         file_put_contents(base_path('routes/api.php'),$file_contents, FILE_APPEND);
+        //genereate routes
 
         //GENERATE BACK-END CODE END
 
-        //GENERATE FRONT-END CODE START
-
-        //generate list view file
-        //generate list view controller
-        //generate create new view
-        //generate create new controller
-        //generate show item view
-        //generate show item controller
-
-
-        //GENERATE FRONT-END CODE END
-
-        //check if any file exists
-        //confirm overwrite or overwrite all
-        }
-        exec('composer dump-autoload', $result, $return_var);
-        $this->comment(PHP_EOL.$return_var.PHP_EOL);
-        print_r($result);
     }
     private function convertDatabaseColumnTypeToValidationRule($column_type){
         if(strstr($column_type,'tinyint(1)')!=false)
@@ -151,10 +179,28 @@ class AutoGenerateModelCode extends Command
             return "integer";
         if(strstr($column_type,'decimal')!=false)
             return "numeric";
+//        if(strstr($column_type,'varchar')!=false)
+//            return "alpha";
+//        if(strstr($column_type,'text')!=false)
+//            return "alpha";
+        if(strstr($column_type,'date')!=false)
+            return "date";
+        if(strstr($column_type,'timestamp')!=false)
+            return "date";
+        return "";
+    }
+
+    private function convertDatabaseColumnTypeToAngularType($column_type){
+        if(strstr($column_type,'tinyint(1)')!=false)
+            return "boolean";
+        if(strstr($column_type,'int')!=false)
+            return "number";
+        if(strstr($column_type,'decimal')!=false)
+            return "number";
         if(strstr($column_type,'varchar')!=false)
-            return "alpha";
+            return "string";
         if(strstr($column_type,'text')!=false)
-            return "alpha";
+            return "string";
         if(strstr($column_type,'date')!=false)
             return "date";
         if(strstr($column_type,'timestamp')!=false)

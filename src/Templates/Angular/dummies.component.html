@@ -1,0 +1,26 @@
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 ">
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>Dummy</strong> | Other title | <a (click)="editDummy({})">+new</a></div>
+
+                <div class="panel-body">
+                    <table class="table table-bordered table-condensed"  *ngIf="dummys&&dummys.data.length>0">
+                        <tr>
+                            <th>Nr.</th>
+                            DUMMY_HEADERS
+                        </tr>
+
+                        <tr *ngFor="let dummy of dummys.data; let i = index" >
+                            <td>
+                                <a [routerLink]="['/dummy', dummy.id]" >{{i+1}}.</a>
+                                <fa class="pull-right" [name]="'pencil'" (click)="editDummy(dummy)"></fa>
+                            </td>
+                            DUMMY_COLUMNS
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -22,10 +22,4 @@ to config/app.php 'providers' array
 ## Usage
 
 1. Create your migrations and run them using `php artisan migrate`.
-2. Run `php artisan auto-generate-code --all` to generate code for all existing tables except `migrations` and `password_resets`
-
-OR
-
-1. Create your migrations and run them using `php artisan migrate`.
-2. Run `php artisan auto-generate-code --table=your_single_table_name` to generate code for specific table.
-(this can be handy if you want to generate code during later development stages, when new database tables are needed).
+2. Run `php artisan scaffold table_name` to generate code for all existing table_name table
