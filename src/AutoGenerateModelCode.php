@@ -137,7 +137,7 @@ class AutoGenerateModelCode extends Command
         } else {
             //GENERATE BACK-END CODE START
             //generate model
-            $dir = app_path('Models/' . $model_name . '/');
+            $dir = app_path('Models/');
             if (!file_exists($dir)) {
                 mkdir($dir, 0777, true);
             }
@@ -151,7 +151,7 @@ class AutoGenerateModelCode extends Command
             //fill custom translation rules
 
             //generate controller
-            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyControllerUpdated.php.tpl');
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyController.php.tpl');
             $file_contents = str_replace("DummyController", $model_name . 'sController', $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             file_put_contents(app_path('Http/Controllers/' . $model_name . 'sController' . '.php'), $file_contents);
