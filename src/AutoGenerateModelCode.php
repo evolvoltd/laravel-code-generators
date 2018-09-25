@@ -66,8 +66,9 @@ class AutoGenerateModelCode extends Command
                 $boolean_columns[] = $value->Field;
         }
         if(substr($table, -1)=='s')
-
             $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
+        else
+            $model_name = str_replace('_', '', ucwords($table, '_'));
 
         if($this->option('only-ng')){
             $dir = app_path('Console/Commands/Output/Angular/'.$table.'/');
