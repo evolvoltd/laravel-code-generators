@@ -1,5 +1,5 @@
 <?php
-namespace App;
+namespace App\Models;
 
 use App\Logic\Helpers\Taits\BootableTrait;
 use Illuminate\Database\Eloquent\Model;

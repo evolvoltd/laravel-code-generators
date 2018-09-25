@@ -11,7 +11,7 @@ class DummyController extends Controller
 {
 
 
-    public function index()
+    public function index(Request $request)
     {
         $query = Dummy::query();
         //$query->orderByRaw('FIELD(status, "not_approved", "payment_pending", "payment_received", "discarded")');
