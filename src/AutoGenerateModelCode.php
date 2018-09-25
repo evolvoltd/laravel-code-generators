@@ -74,60 +74,60 @@ class AutoGenerateModelCode extends Command
             if (!file_exists($dir)) {
                 mkdir($dir, 0777, true);
             }
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-paginated.ts'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummy-paginated.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-paginated.ts'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummies.component.html'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummies.component.html');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             $file_contents = str_replace("DUMMY_HEADERS",implode(PHP_EOL, $table_headers),$file_contents);
             $file_contents = str_replace("DUMMY_COLUMNS",implode(PHP_EOL, $table_columns),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$table.'.component.html'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummies.component.ts'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummies.component.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$table.'.component.ts'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy.service.ts'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummy.service.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$table.'.service.ts'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy.ts'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummy.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("MODEL_ATTRIBUTES",implode(PHP_EOL, $angular_model_attributes),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'.ts'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-detail.component.html'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummy-detail.component.html');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-detail.component.html'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-detail.component.ts'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummy-detail.component.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-detail.component.ts'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-modal.component.ts'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummy-modal.component.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-modal.component.ts'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/dummy-modal.component.html'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/dummy-modal.component.html');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             $file_contents = str_replace("FORM_FIELDS",implode(PHP_EOL, $form_fields),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-modal.component.html'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/app.module.ts'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/app.module.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/app.module.ts'),$file_contents);
 
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Angular/app-routing.module.ts'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/app-routing.module.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/app-routing.module.ts'),$file_contents);
@@ -136,20 +136,24 @@ class AutoGenerateModelCode extends Command
         } else {
             //GENERATE BACK-END CODE START
             //generate model
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Laravel/Dummy.php.tpl'));
+            $dir = app_path('Models/' . $model_name . '/');
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Dummy.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummy", $table, $file_contents);
             $file_contents = str_replace("fillable = []", 'fillable = [' . PHP_EOL . '        "' . implode('",' . PHP_EOL . '        "', $fillable_columns) . '"' . PHP_EOL . '    ]', $file_contents);
             $file_contents = str_replace("casts = []", 'casts = [' . PHP_EOL . '        "' . implode('" => "boolean",' . PHP_EOL . '        "', $boolean_columns) . '" => "boolean"' . PHP_EOL . '    ]', $file_contents);
 
-            file_put_contents(app_path('Test' . $model_name . '.php'), $file_contents);
+            file_put_contents(app_path('Models/' . $model_name . '.php'), $file_contents);
             //fill custom translation rules
 
             //generate controller
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Laravel/DummyControllerUpdated.php.tpl'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyControllerUpdated.php.tpl');
             $file_contents = str_replace("DummyController", $model_name . 'sController', $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            file_put_contents(app_path('Http/Controllers/Test' . $model_name . 'sController' . '.php'), $file_contents);
+            file_put_contents(app_path('Http/Controllers/' . $model_name . 'sController' . '.php'), $file_contents);
 
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
@@ -157,7 +161,7 @@ class AutoGenerateModelCode extends Command
                 mkdir($dir, 0777, true);
             }
             //generate request class
-            $file_contents = file_get_contents(app_path('Console/Commands/Templates/Laravel/Requests/Dummy/StoreOrUpdate.php.tpl'));
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Requests/Dummy/StoreOrUpdate.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("return []", 'return [' . PHP_EOL . '        ' . implode(',' . PHP_EOL . '        ', $validation_rules) . '' . PHP_EOL . '    ]', $file_contents);
             file_put_contents(app_path('Http/Requests/' . $model_name . '/StoreOrUpdate' . '.php'), $file_contents);
