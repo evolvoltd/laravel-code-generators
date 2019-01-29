@@ -27,7 +27,7 @@ class DummyController extends Controller
 
     public function store(StoreOrUpdate $request)
     {
-        $item = tpl::create($request->all());
+        $item = Dummy::create($request->all());
         return $item;
     }
 
