@@ -2,6 +2,7 @@
 
 namespace Evolvo\LaravelCodeGenerators;
 
+
 use Illuminate\Support\ServiceProvider;
 
 class LaravelCodeGeneratorsServiceProvider extends ServiceProvider
@@ -16,6 +17,9 @@ class LaravelCodeGeneratorsServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 AutoGenerateModelCode::class,
+                AutoGenerateTest::class,
+                AutoGenerateTestResponse::class,
+                AutoGenerateSingleTest::class,
             ]);
         }
     }

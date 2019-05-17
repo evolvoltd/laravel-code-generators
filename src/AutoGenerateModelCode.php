@@ -168,7 +168,20 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Http/Requests/' . $model_name . '/StoreOrUpdate' . '.php'), $file_contents);
         }
 
-        $this->info("Well Done!");
+
+
+        if ($this->confirm('Create tests for generated CRUD?')) {
+            Artisan::call('generate:test',
+                [
+                    'test_name'=>$model_name,
+                    'api_resource_route'=>$table,
+                    'table'=>$table
+                ]
+            );
+            $this->info("Tests created!");
+        }
+
+        $this->info("Code generated succesfully!");
         //generate policy
         //put policy to policies list
 
