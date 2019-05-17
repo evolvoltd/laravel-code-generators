@@ -45,9 +45,9 @@ class AutoGenerateTest extends Command
         $fillable_fields = '';
 
         if(!$testName && !$route && !$table) {
-            $testName = $this->ask('Enter test name (E.g. Clients)');
-            $route = $this->ask('Enter apiResource route name (E.g. clients)');
-            $table = $this->ask('Enter table name if you wish to generate table fields (E.g. clients)');
+            $testName = $this->ask('Enter test name (E.g. Client)'); 
+            $route = $this->ask('Enter apiResource route name (E.g. '.lcfirst($testName).'s)');
+            $table = $this->ask('Enter table name if you wish to generate table fields (E.g. '.lcfirst($testName).'s)');
         }
 
         if ($table) {
@@ -106,9 +106,9 @@ class AutoGenerateTest extends Command
         
         file_put_contents(base_path('tests/Feature/' . $testName . '/' . $sufix), $file_contents);
 
-        $prepair_test_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyDataBasePrepairTest.tpl');
-        if(!file_exists(base_path('tests/Feature/DataBasePrepairTest.php'))) {
-            file_put_contents(base_path('tests/Feature/DataBasePrepairTest.php'), $prepair_test_contents);
+        $prepair_test_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyDatabasePrepareTest.php.tpl');
+        if(!file_exists(base_path('tests/Feature/DatabasePrepareTest.php'))) {
+            file_put_contents(base_path('tests/Feature/DatabasePrepareTest.php'), $prepair_test_contents);
         }
         $phpUnitFile = file_get_contents(base_path('phpunit.xml'));
         
@@ -118,9 +118,9 @@ class AutoGenerateTest extends Command
             
         }
 
-        if (strpos($phpUnitFile, '<directory suffix="DataBasePrepairTest.php">./tests/Feature</directory>') == false) {
+        if (strpos($phpUnitFile, '<directory suffix="DatabasePrepareTest.php">./tests/Feature</directory>') == false) {
             $phpUnitFile = str_replace("<testsuite name=\"Feature\">", "<testsuite name=\"Feature\">
-            <directory suffix=\"DataBasePrepairTest.php\">./tests/Feature</directory>", $phpUnitFile);
+            <directory suffix=\"DatabasePrepareTest.php\">./tests/Feature</directory>", $phpUnitFile);
         }
 
         $phpUnitFile = str_replace("<directory suffix=\"Test.php\">./tests/Feature</directory>", 
@@ -130,7 +130,7 @@ class AutoGenerateTest extends Command
         file_put_contents(base_path('phpunit.xml'), $phpUnitFile);
         
         
-        $this->info($testName . "test template created!");
+        $this->info($testName . " test template created!");
 
         
     }

@@ -150,12 +150,34 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Models/' . $model_name . '.php'), $file_contents);
             //fill custom translation rules
 
+            $dir = app_path('Services');
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
+
+            //generate service
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyService.php.tpl');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummyService", lcfirst($model_name) . "Service", $file_contents);
+            $file_contents = str_replace("dummies", lcfirst($model_name) . "s", $file_contents);
+            $file_contents = str_replace("dummyItem", '$'.lcfirst($model_name), $file_contents);
+            file_put_contents(app_path('Services/' . $model_name . 'Service' . '.php'), $file_contents);
+            
+
             //generate controller
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyController.php.tpl');
             $file_contents = str_replace("DummyController", $model_name . 'sController', $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummyService", lcfirst($model_name) . "Service", $file_contents);
+            $file_contents = str_replace("dummies", lcfirst($model_name) . "s", $file_contents);
+            $file_contents = str_replace("dummyItem", '$'.lcfirst($model_name), $file_contents);
             file_put_contents(app_path('Http/Controllers/' . $model_name . 'sController' . '.php'), $file_contents);
 
+
+            //generate crud route
+            $file_contents = file_get_contents(base_path('routes/api.php'));
+            $file_contents .= "\n".'Route::apiResource(\''.lcfirst($model_name).'s'.'\', \''.$model_name.'sController\');';
+            file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
             if (!file_exists($dir)) {
@@ -184,9 +206,8 @@ class AutoGenerateModelCode extends Command
         $this->info("Code generated succesfully!");
         //generate policy
         //put policy to policies list
-
-        //genereate routes
-
+        
+        
         //GENERATE BACK-END CODE END
 
     }
