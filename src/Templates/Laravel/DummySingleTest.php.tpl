@@ -12,7 +12,7 @@
 
 
                 ],
-                'status' => 201,
+                'status' => 200,
                 'user_id' => 2,
                 'test_structure' => false,
                 'structure' => [],

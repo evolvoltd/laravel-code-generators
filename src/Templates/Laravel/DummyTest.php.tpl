@@ -2,16 +2,14 @@
 
 namespace Tests\Feature;
 
-use Tests\Feature\MasterTest;
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Evolvo\LaravelCodeGenerators\TestLogic\MasterTest;
+use Illuminate\Support\Facades\DB;
 
 class testClass extends MasterTest
 {
     public function testStore()
     {
-    //$this->artisan('migrate:refresh');
+    DB::table('/*table*/')->truncate();
         $this->master(
             [
                 'method' => 'post',
