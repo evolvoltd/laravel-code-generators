@@ -20,7 +20,7 @@ class DummyController extends Controller
     public function index(Request $request)
     {
         $dummiesQuery = $this->dummyService->dummiesQuery($request);
-        return  $dummiesQuery->paginate(50);
+        return  $dummiesQuery;
     }
 
     public function show(Dummy dummyItem){

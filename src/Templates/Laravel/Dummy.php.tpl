@@ -1,7 +1,7 @@
 <?php
 namespace App\Models;
 
-use App\Logic\Helpers\Taits\BootableTrait;
+use App\Logic\Helpers\Traits\BootableTrait;
 use Illuminate\Database\Eloquent\Model;
 
 class Dummy extends Model {

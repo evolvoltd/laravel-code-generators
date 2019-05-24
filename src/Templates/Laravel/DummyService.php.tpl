@@ -12,7 +12,7 @@ class DummyService
         //$query->orderByRaw('FIELD(status, "not_approved", "payment_pending", "payment_received", "discarded")');
 
         $query = Dummy::query();
-        return $query;
+        return $query->paginate(50);
     }
 
     public function createDummy(Request $request){
