@@ -13,7 +13,7 @@ class AutoGenerateTest extends Command
      *
      * @var string
      */
-    protected $signature = 'generate:test {test_name?} {api_resource_route?} {table?}';
+    protected $signature = 'generate:test {table?}';
 
     /**
      * The console command description.
@@ -39,19 +39,35 @@ class AutoGenerateTest extends Command
      */
     public function handle()
     {
-        $testName = $this->argument('test_name');
-        $route = $this->argument('api_resource_route');
         $table = $this->argument('table');
+
+        $singular_table_name = (substr($table, strlen($table)-4, 3)=='ies')?(substr($table, 0, -3).'y'):(substr($table, 0, -1));
+        if(substr($table, -1)=='s')
+            $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
+        else
+            $model_name = str_replace('_', '', ucwords($table, '_'));
+
+
+        $testName = $model_name;//gument('test_name');
+        $route = lcfirst($model_name) . 's';//$this->argument('api_resource_route');
+
+
         $fillable_fields = '';
 
-        if(!$testName && !$route && !$table) {
-            $testName = $this->ask('Enter test name (E.g. Clients)');
-            $route = $this->ask('Enter apiResource route name (E.g. clients)');
-            $table = $this->ask('Enter table name if you wish to generate table fields (E.g. clients)');
+        if(!$table) {
+            $testName = $this->ask('Enter model name (E.g. Client)');
+            $route = $this->ask('Enter apiResource route name (E.g. '.lcfirst($testName).'s)');
+            $table = $this->ask('Enter table name if you wish to generate table fields (E.g. '.lcfirst($testName).'s)');
         }
 
         if ($table) {
-            $columns = DB::select('show columns from ' . $table);
+            try {
+                $columns = DB::select('show columns from ' . $table);
+            } catch (\Exception $e) {
+                $this->info("Table not found, enter correct table name!");
+                return true;
+            }
+            
             $fillable_columns = [];
             $boolean_columns = [];
             $validation_rules = [];
@@ -89,6 +105,8 @@ class AutoGenerateTest extends Command
         $file_contents = str_replace("testIndex()", "test" . $testName . "Index()", $file_contents);
         $file_contents = str_replace("testShow()", "test" . $testName . "Show()", $file_contents);
         $file_contents = str_replace("testDelete()", "test" . $testName . "Delete()", $file_contents);
+        $file_contents = str_replace("testStoreValidate()", "test" . $testName . "StoreValidate()", $file_contents);
+        $file_contents = str_replace("testUpdateValidate()", "test" . $testName . "UpdateValidate()", $file_contents);
 
         $file_contents = str_replace("api/store", "api/" . $route, $file_contents);
         $file_contents = str_replace("api/update", "api/" . $route . "/1", $file_contents);
@@ -103,41 +121,41 @@ class AutoGenerateTest extends Command
         !file_exists(base_path('tests/Feature/' . $testName))?mkdir(base_path('tests/Feature/' . $testName)):null;
 
         $sufix = $testName . 'Test' . '.php';
-        
+
         file_put_contents(base_path('tests/Feature/' . $testName . '/' . $sufix), $file_contents);
 
-        $prepair_test_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyDataBasePrepairTest.tpl');
-        if(!file_exists(base_path('tests/Feature/DataBasePrepairTest.php'))) {
-            file_put_contents(base_path('tests/Feature/DataBasePrepairTest.php'), $prepair_test_contents);
+        $prepair_test_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyDatabasePrepareTest.php.tpl');
+        if(!file_exists(base_path('tests/Feature/DatabasePrepareTest.php'))) {
+            file_put_contents(base_path('tests/Feature/DatabasePrepareTest.php'), $prepair_test_contents);
         }
         $phpUnitFile = file_get_contents(base_path('phpunit.xml'));
-        
+
         if (strpos($phpUnitFile, '<env name="DB_DATABASE" value=') == false) {
             $phpUnitFile = str_replace("<php>", "<php>
         <env name=\"DB_DATABASE\" value=\"homestead\"/>", $phpUnitFile);
-            
+
         }
 
-        if (strpos($phpUnitFile, '<directory suffix="DataBasePrepairTest.php">./tests/Feature</directory>') == false) {
+        if (strpos($phpUnitFile, '<directory suffix="DatabasePrepareTest.php">./tests/Feature</directory>') == false) {
             $phpUnitFile = str_replace("<testsuite name=\"Feature\">", "<testsuite name=\"Feature\">
-            <directory suffix=\"DataBasePrepairTest.php\">./tests/Feature</directory>", $phpUnitFile);
+            <directory suffix=\"DatabasePrepareTest.php\">./tests/Feature</directory>", $phpUnitFile);
         }
 
-        $phpUnitFile = str_replace("<directory suffix=\"Test.php\">./tests/Feature</directory>", 
+        $phpUnitFile = str_replace("<directory suffix=\"Test.php\">./tests/Feature</directory>",
           "<directory suffix=\"".$sufix."\">./tests/Feature/".$testName."</directory>
             <directory suffix=\"Test.php\">./tests/Feature</directory>", $phpUnitFile);
 
         file_put_contents(base_path('phpunit.xml'), $phpUnitFile);
-        
-        
-        $this->info($testName . "test template created!");
 
-        
+
+        $this->info($testName . " test template created!");
+
+
     }
 
 
-    
-    
+
+
     private function getStoreData($column_type)
     {
         if (strstr($column_type, 'tinyint(1)') != false)

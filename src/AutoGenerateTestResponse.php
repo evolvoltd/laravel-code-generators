@@ -15,7 +15,7 @@ class AutoGenerateTestResponse extends Command
      *
      * @var string
      */
-    protected $signature = 'generate:test-response {test_name} {method?}' ;
+    protected $signature = 'generate:test-response {path/test_name} {method?}';
 
     /**
      * The console command description.
@@ -43,14 +43,17 @@ class AutoGenerateTestResponse extends Command
      */
     public static function makeStructure(&$results, $key)
     {
-        $structurePost = str_replace('":', '" => ', $results[$key]??'');
+        $structurePost = str_replace('":', '" => ',$results[$key] ?? '');
         $structurePost = str_replace("{", "[\n", $structurePost);
         $structurePost = str_replace("}", ",\n]\n", $structurePost);
         $structurePost = str_replace(",", ",\n", $structurePost);
         $structurePost = str_replace(".HTTP/1.1 200 OK", "", $structurePost);
         $structurePost = str_replace(".....", "", $structurePost);
         $structurePost = str_replace("7 / 7 (100%)", "", $structurePost);
-        
+        $structurePost = str_replace("2 / 2 (100%)HTTP/1.1 422 Unprocessable Entity\n", "", $structurePost);
+        $structurePost = str_replace(".                                                                  2 / 2 (100%)HTTP/1.1 422 Unprocessable Entity", "", $structurePost);
+        $structurePost = str_replace("\/", "/", $structurePost);
+
         return $structurePost;
     }
 
@@ -58,14 +61,19 @@ class AutoGenerateTestResponse extends Command
     public function handle()
     {
         $methodName = $this->argument('method');
-        $testNamePath = $this->argument('test_name');
-        
+        $testNamePath = $this->argument('path/test_name');
+
+        if (!file_exists(base_path('tests/Feature/' . $testNamePath . '.php'))) {
+
+            $this->warn('Entered test name path not exist!');
+            return '';
+        }
         $file_contents = file_get_contents(base_path('tests/Feature/' . $testNamePath . '.php'));
 
-        $testName = explode('/',$testNamePath);
+        $testName = explode('/', $testNamePath);
         $testName = end($testName);
-        
-        if(!$methodName) {
+
+        if (!$methodName) {
 
             $name = substr($testName, 0, -4);
             $testMethodNames = [
@@ -87,12 +95,11 @@ class AutoGenerateTestResponse extends Command
                 echo $process->getOutput();
                 $bar->advance();
             }
-
-
-            $file_contents = str_replace("[/*'post_json'*/]", self::makeStructure($results[0], 9), $file_contents);
-            $file_contents = str_replace("[/*'put_json'*/]", self::makeStructure($results[1], 9), $file_contents);
-            $file_contents = str_replace("[/*'index_json'*/]", self::makeStructure($results[2], 9), $file_contents);
-            $file_contents = str_replace("[/*'show_json'*/]", self::makeStructure($results[3], 9), $file_contents);
+            
+            $file_contents = str_replace("[/*'post_json'*/]", "/*'post_json'*/".self::makeStructure($results[0], 9), $file_contents);
+            $file_contents = str_replace("[/*'put_json'*/]", "/*'put_json'*/".self::makeStructure($results[1], 9), $file_contents);
+            $file_contents = str_replace("[/*'index_json'*/]", "/*'index_json'*/".self::makeStructure($results[2], 9), $file_contents);
+            $file_contents = str_replace("[/*'show_json'*/]", "/*'show_json'*/".self::makeStructure($results[3], 9), $file_contents);
             //$file_contents = str_replace("[/*'custom_json'*/]", self::makeStructure($results[3], 9), $file_contents);
 
 
@@ -100,9 +107,7 @@ class AutoGenerateTestResponse extends Command
 
             $this->info($testName . " test json outputs created!");
             $bar->finish();
-        }
-
-        else {
+        } else {
 
             $process = new Process('./vendor/bin/phpunit --filter ' . $methodName . ' --configuration ' . base_path() . '/phpunit.xml');
             $process->run();
@@ -110,7 +115,7 @@ class AutoGenerateTestResponse extends Command
             $results[] = explode("\n", $process->getOutput());
             echo $process->getOutput();
 
-            $files = str_replace("[/*'custom_json'*/]", self::makeStructure($results[0], 9), $file_contents);
+            $files = str_replace("[/*'custom_json'*/]","/*'custom_json'*/" . self::makeStructure($results[0], 9), $file_contents);
             file_put_contents(base_path('tests/Feature/' . $testName . '.php'), $files);
             $this->info($testName . " test json output created!");
         }

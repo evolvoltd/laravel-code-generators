@@ -13,14 +13,14 @@ class AutoGenerateSingleTest extends Command
      *
      * @var string
      */
-    protected $signature = 'generate:single-test {test_name} {api_route?} {table?}';
+    protected $signature = 'generate:single-test {path/test_name} {api_route?} {table?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Generates single test';
 
     /**
      * Create a new command instance.
@@ -39,14 +39,16 @@ class AutoGenerateSingleTest extends Command
      */
     public function handle()
     {
-        $testNamePath = $this->argument('test_name');
+        $testNamePath = $this->argument('path/test_name');
         $route = $this->argument('api_route');
         $table = $this->argument('table');
         $options = $this->options();
 
         $contents = file_get_contents(base_path('tests/Feature/' . $testNamePath . '.php'));
-        $contents .= $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummySingleTest.php.tpl');
-        $name = $this->ask('enter test method name');
+
+        $replacement = file_get_contents(__DIR__ . '/Templates/Laravel/DummySingleTest.php.tpl');
+        $contents = substr($contents, 0, -2) . $replacement;
+        $name = $this->ask('enter test name (E.g. Statistics)');
 
         $contents = str_replace("testCustom()", "test" . $name . '()' ?? chr(rand(65, 10)) . '()', $contents);
 
@@ -61,6 +63,8 @@ class AutoGenerateSingleTest extends Command
         $contents = substr($contents, 0, -1);
 
         file_put_contents(base_path('tests/Feature/' . $testNamePath . '.php'), $contents);
+        
+        $this->info('Test created!');
     }
 
 }
