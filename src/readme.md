@@ -27,5 +27,5 @@ to config/app.php 'providers' array
 4. Option `--no-ts` will not generate tests responses
 5. Run `php artisan generate:test table_name` to generate CRUD tests.
 6. Run `php artisan generate:single-test path/test_name` to generate single test method
-7. Run `php artisan generate:test_response path/test_name` to generate CRUD test responses
+7. Run `php artisan generate:test-response path/test_name` to generate CRUD test responses
 
