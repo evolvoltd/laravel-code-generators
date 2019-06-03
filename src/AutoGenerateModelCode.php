@@ -46,7 +46,6 @@ class AutoGenerateModelCode extends Command
         $table_columns = [];
         $angular_model_attributes = [];
         $vue_form_fields = [];
-        $vue_error_fields = [];
         $form_fields = [];
         $singular_table_name = (substr($table, strlen($table)-4, 3)=='ies')?(substr($table, 0, -3).'y'):(substr($table, 0, -1));
         foreach ($columns as $value) {
@@ -60,16 +59,14 @@ class AutoGenerateModelCode extends Command
                 $vue_form_fields[] =
                     '<v-flex xs12 sm6>'.PHP_EOL.
                         '<v-text-field'.PHP_EOL.
-                            'v-model="item.'.$singular_table_name.'.'.$value->Field.'"'.PHP_EOL.
-                            ':error-messages="backendErrors[\''.$singular_table_name.'.'.$value->Field.'\']"'.PHP_EOL.
-                            ':rules="[required]"'.PHP_EOL.
-                            ':label="$t(\''.$singular_table_name.'.'.$value->Field.'\')"'.PHP_EOL.
-                            'name="'.$singular_table_name.'.'.$value->Field.'"'.PHP_EOL.
-                            '@blur="clearErrors(\''.$singular_table_name.'.'.$value->Field.'\')"'.PHP_EOL.
+                            'v-model="'.$singular_table_name.'.'.$value->Field.'"'.PHP_EOL.
+                            ':error-messages="errors[\''.$value->Field.'\']"'.PHP_EOL.
+                            ':rules="[]"'.PHP_EOL.
+                            ':label="$t(\''.$value->Field.'\')"'.PHP_EOL.
+                            'name="'.$value->Field.'"'.PHP_EOL.
+                            '@blur="formMixin_clearErrors(\''.$value->Field.'\')"'.PHP_EOL.
                         '/>'.PHP_EOL.
                     '</v-flex>';
-
-                $vue_error_fields[] = $singular_table_name.'.'.$value->Field.': [],'.PHP_EOL;
 
                 $form_fields[] =
                     '<div class="form-group">'.PHP_EOL.
@@ -143,7 +140,6 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
-            $file_contents = str_replace("VUE_ERROR_FIELDS",implode(PHP_EOL, $vue_error_fields),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$singular_table_name.'Form.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/app.module.ts');

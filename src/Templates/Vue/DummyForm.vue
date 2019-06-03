@@ -26,8 +26,8 @@
         </v-btn>
 
         <v-btn
-          :disabled="requestPending"
-          :loading="requestPending"
+          :disabled="isSavingDisabled"
+          :loading="isSavingDisabled"
           type="submit"
           color="primary"
           flat>
@@ -39,7 +39,6 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
 import formMixin from '../mixins/form-mixin';
 
 export default {
@@ -47,26 +46,16 @@ export default {
 
   mixins: [formMixin],
 
-  data() {
-    return {
-      model: 'dummy',
-      backendErrors: {
-        VUE_ERROR_FIELDS
-      },
-    };
+  props: {
+    user: Object,
+    errors: Object,
+    isSavingDisabled: Boolean,
   },
 
   computed: {
     formTitle() {
-      return this.index === -1 ? this.$t('new_dummy') : this.$t('edit_dummy');
+      return this.dummy.id ? this.$t('new_dummy') : this.$t('edit_dummy');
     },
-  },
-
-  methods: {
-    ...mapActions({
-      create: 'dummy/create',
-      update: 'dummy/update',
-    }),
   },
 };
 </script>
