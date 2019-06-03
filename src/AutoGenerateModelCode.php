@@ -45,8 +45,13 @@ class AutoGenerateModelCode extends Command
         $table_headers = [];
         $table_columns = [];
         $angular_model_attributes = [];
+
         $vue_form_fields = [];
+        $vue_table_columns = [];
+        $vue_table_row_details = [];
+
         $form_fields = [];
+        $column_index = 0;
         $singular_table_name = (substr($table, strlen($table)-4, 3)=='ies')?(substr($table, 0, -3).'y'):(substr($table, 0, -1));
         foreach ($columns as $value) {
             if(!in_array($value->Field,['id','created_at','updated_at','created_by','updated_by'])){
@@ -66,13 +71,41 @@ class AutoGenerateModelCode extends Command
                             'name="'.$value->Field.'"'.PHP_EOL.
                             '@blur="formMixin_clearErrors(\''.$value->Field.'\')"'.PHP_EOL.
                         '/>'.PHP_EOL.
-                    '</v-flex>';
+                    '</v-flex>'.PHP_EOL;
+
+                if ($column_index > 0) {
+                    $vue_table_columns[] =
+                        '<td v-if="!$vuetify.breakpoint[headers['.$column_index.'].hidden]">'.PHP_EOL.
+                            '{{ props.item.'.$value->Field.' }}'.PHP_EOL.
+                        '</td>'.PHP_EOL;
+                } else {
+                    $vue_table_columns[] =
+                        '<td>'.PHP_EOL.
+                        '{{ props.item.'.$value->Field.' }}'.PHP_EOL.
+                        '</td>'.PHP_EOL;
+                }
+
+                $vue_table_row_details[] =
+                    '<v-layout'.PHP_EOL.
+                      'v-if="headers['.$column_index.'].hidden"'.PHP_EOL.
+                      'class="row-detail-item"'.PHP_EOL.
+                      'justify-space-between'.PHP_EOL.
+                      'align-center>'.PHP_EOL.
+                      '<strong>'.PHP_EOL.
+                        '{{ headers['.$column_index.'].text }}:'.PHP_EOL.
+                      '</strong>'.PHP_EOL.
+                      '<span class="text-xs-right">'.PHP_EOL.
+                        '{{ props.item.'.$value->Field.' }}'.PHP_EOL.
+                      '</span>'.PHP_EOL.
+                    '</v-layout>'.PHP_EOL;
 
                 $form_fields[] =
                     '<div class="form-group">'.PHP_EOL.
                     '<label>'.ucfirst($value->Field).'</label>'.PHP_EOL.
                     '<input type="text" class="form-control" [(ngModel)]="'.$singular_table_name.'.'.$value->Field.'" placeholder="'.ucfirst($value->Field).'">'.PHP_EOL.
                     '</div>';
+
+                $column_index++;
             }
 
             if($value->Type=='tinyint(1)')
@@ -136,12 +169,6 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("FORM_FIELDS",implode(PHP_EOL, $form_fields),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/'.$singular_table_name.'-modal.component.html'),$file_contents);
 
-            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
-            $file_contents = str_replace("Dummy",$model_name,$file_contents);
-            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
-            $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$singular_table_name.'Form.vue'),$file_contents);
-
             $file_contents = file_get_contents(__DIR__ . '/Templates/Angular/app.module.ts');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
@@ -152,6 +179,24 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/'.$table.'/app-routing.module.ts'),$file_contents);
 
+        } else if ($this->option('only-vue')) {
+            $dir = app_path('Console/Commands/Output/Vue/'.$table.'/');
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Form.vue'),$file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.vue');
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("VUE_TABLE_COLUMNS",implode(PHP_EOL, $vue_table_columns),$file_contents);
+            $file_contents = str_replace("VUE_TABLE_ROW_DETAILS",implode(PHP_EOL, $vue_table_row_details),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Form.vue'),$file_contents);
 
         } else {
             //GENERATE BACK-END CODE START
