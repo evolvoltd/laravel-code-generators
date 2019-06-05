@@ -67,7 +67,7 @@ class AutoGenerateModelCode extends Command
                 if ($value->Type === 'date') {
                     $date_picker_attribute = 'is' . ucfirst($value->Field) . 'PickerOpen';
                     $vue_date_picker_attributes = $vue_date_picker_attributes.$date_picker_attribute.': false,'.PHP_EOL;
-                    $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute);
+                    $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
                 } else if ($value->Type === 'tinyint(1)') {
                     $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name);
                 } else {
@@ -318,7 +318,7 @@ class AutoGenerateModelCode extends Command
             '</v-flex>'.PHP_EOL;
     }
 
-    private function getVueDateField(string $field, string $date_picker_attribute): string {
+    private function getVueDateField(string $field, string $date_picker_attribute, string $singular_table_name): string {
         return
             '<v-flex xs12 sm6>'.PHP_EOL.
                 '<v-menu'.PHP_EOL.
