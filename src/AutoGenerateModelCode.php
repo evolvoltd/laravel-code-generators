@@ -47,6 +47,7 @@ class AutoGenerateModelCode extends Command
         $angular_model_attributes = [];
 
         $vue_form_fields = [];
+        $vue_table_headers = 'const headers = ['.PHP_EOL;
         $vue_table_columns = [];
         $vue_table_row_details = [];
         $vue_first_form_field = '';
@@ -76,7 +77,9 @@ class AutoGenerateModelCode extends Command
 
                 if ($column_index === 0) {
                     $vue_first_form_field = $value->Field;
+                    $vue_table_headers = $vue_table_headers.'{ text: this.$t(\''.$value->Field.'\') }'.PHP_EOL;
                 }
+                $vue_table_headers = $vue_table_headers.'{ text: this.$t(\''.$value->Field.'\'), hidden: \'xsOnly\' }'.PHP_EOL;
                 $vue_table_columns[] = $this->getVueTableColumn($value->Field, $column_index);
                 $vue_table_row_details[] = $this->getVueRowDetail($value->Field, $column_index);
 
@@ -179,6 +182,7 @@ class AutoGenerateModelCode extends Command
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.vue');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("VUE_TABLE_HEADERS",$vue_table_headers,$file_contents);
             $file_contents = str_replace("VUE_TABLE_COLUMNS",implode(PHP_EOL, $vue_table_columns),$file_contents);
             $file_contents = str_replace("VUE_TABLE_ROW_DETAILS",implode(PHP_EOL, $vue_table_row_details),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Table.vue'),$file_contents);

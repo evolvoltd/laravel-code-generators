@@ -104,13 +104,7 @@ export default {
     },
 
     headers() {
-      const headers = [
-        { text: this.$t('full_name') },
-        { text: this.$t('phone'), hidden: 'xsOnly' },
-        { text: this.$t('email'), hidden: 'xsOnly' },
-        { text: this.$t('address'), hidden: 'xsOnly' },
-        { text: this.$t('status'), hidden: 'xsOnly' },
-      ];
+      VUE_TABLE_HEADERS
       if (this.isTouchDevice) {
         headers.push({ text: '' });
       }
