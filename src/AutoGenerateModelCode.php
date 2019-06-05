@@ -49,6 +49,7 @@ class AutoGenerateModelCode extends Command
         $vue_form_fields = [];
         $vue_table_columns = [];
         $vue_table_row_details = [];
+        $vue_first_form_field = '';
 
         $form_fields = [];
         $column_index = 0;
@@ -79,6 +80,7 @@ class AutoGenerateModelCode extends Command
                             '{{ props.item.'.$value->Field.' }}'.PHP_EOL.
                         '</td>'.PHP_EOL;
                 } else {
+                    $vue_first_form_field = $value->Field;
                     $vue_table_columns[] =
                         '<td>'.PHP_EOL.
                         '{{ props.item.'.$value->Field.' }}'.PHP_EOL.
@@ -190,6 +192,12 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Form.vue'),$file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.spec.js');
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("VUE_FORM_FIELD_NAME",$vue_first_form_field,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Form.spec.js'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.vue');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
