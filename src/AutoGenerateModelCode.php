@@ -216,6 +216,11 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'s.vue'),$file_contents);
 
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/dummy-service.js');
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$singular_table_name.'-service.js'),$file_contents);
+
         } else {
             //GENERATE BACK-END CODE START
             //generate model
