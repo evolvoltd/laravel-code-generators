@@ -50,68 +50,44 @@ class AutoGenerateModelCode extends Command
         $vue_table_columns = [];
         $vue_table_row_details = [];
         $vue_first_form_field = '';
+        $vue_date_picker_attributes = '';
 
         $form_fields = [];
         $column_index = 0;
         $singular_table_name = (substr($table, strlen($table)-4, 3)=='ies')?(substr($table, 0, -3).'y'):(substr($table, 0, -1));
         foreach ($columns as $value) {
-            if(!in_array($value->Field,['id','created_at','updated_at','created_by','updated_by'])){
+            if(!in_array($value->Field,['id','created_at','updated_at','deleted_at','created_by','updated_by','deleted_by'])) {
                 $fillable_columns[] = $value->Field;
 
                 $validation_rules[] = '"' . $value->Field . '" => "required|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type) . '"';
                 $angular_model_attributes[] = $value->Field . ': '. $this->convertDatabaseColumnTypeToAngularType($value->Type).';';
                 $table_headers[] = '<th>'.ucfirst($value->Field).'</th>';
                 $table_columns[] = '<td>{{'.$singular_table_name.'.'.$value->Field.'}}</td>';
-                $vue_form_fields[] =
-                    '<v-flex xs12 sm6>'.PHP_EOL.
-                        '<v-text-field'.PHP_EOL.
-                            'v-model="'.$singular_table_name.'.'.$value->Field.'"'.PHP_EOL.
-                            ':error-messages="errors[\''.$value->Field.'\']"'.PHP_EOL.
-                            ':rules="[]"'.PHP_EOL.
-                            ':label="$t(\''.$value->Field.'\')"'.PHP_EOL.
-                            'name="'.$value->Field.'"'.PHP_EOL.
-                            '@blur="formMixin_clearErrors(\''.$value->Field.'\')"'.PHP_EOL.
-                        '/>'.PHP_EOL.
-                    '</v-flex>'.PHP_EOL;
 
-                if ($column_index > 0) {
-                    $vue_table_columns[] =
-                        '<td v-if="!$vuetify.breakpoint[headers['.$column_index.'].hidden]">'.PHP_EOL.
-                            '{{ props.item.'.$value->Field.' }}'.PHP_EOL.
-                        '</td>'.PHP_EOL;
+                if ($value->Type === 'date') {
+                    $date_picker_attribute = 'is' . ucfirst($value->Field) . 'PickerOpen';
+                    $vue_date_picker_attributes = $vue_date_picker_attributes.$date_picker_attribute.': false,'.PHP_EOL;
+                    $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute);
+                } else if ($value->Type === 'tinyint(1)') {
+                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name);
                 } else {
-                    $vue_first_form_field = $value->Field;
-                    $vue_table_columns[] =
-                        '<td>'.PHP_EOL.
-                        '{{ props.item.'.$value->Field.' }}'.PHP_EOL.
-                        '</td>'.PHP_EOL;
+                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name);
                 }
 
-                $vue_table_row_details[] =
-                    '<v-layout'.PHP_EOL.
-                      'v-if="headers['.$column_index.'].hidden"'.PHP_EOL.
-                      'class="row-detail-item"'.PHP_EOL.
-                      'justify-space-between'.PHP_EOL.
-                      'align-center>'.PHP_EOL.
-                      '<strong>'.PHP_EOL.
-                        '{{ headers['.$column_index.'].text }}:'.PHP_EOL.
-                      '</strong>'.PHP_EOL.
-                      '<span class="text-xs-right">'.PHP_EOL.
-                        '{{ props.item.'.$value->Field.' }}'.PHP_EOL.
-                      '</span>'.PHP_EOL.
-                    '</v-layout>'.PHP_EOL;
+                if ($column_index === 0) {
+                    $vue_first_form_field = $value->Field;
+                }
+                $vue_table_columns[] = $this->getVueTableColumn($value->Field, $column_index);
+                $vue_table_row_details[] = $this->getVueRowDetail($value->Field, $column_index);
 
-                $form_fields[] =
-                    '<div class="form-group">'.PHP_EOL.
-                    '<label>'.ucfirst($value->Field).'</label>'.PHP_EOL.
-                    '<input type="text" class="form-control" [(ngModel)]="'.$singular_table_name.'.'.$value->Field.'" placeholder="'.ucfirst($value->Field).'">'.PHP_EOL.
-                    '</div>';
+                $form_fields[] = $this->getAngularFormField($value->Field, $singular_table_name);
 
                 $column_index++;
             }
 
-            if($value->Type=='tinyint(1)')
+            if($value->Type=='tinyint(1)') {
                 $boolean_columns[] = $value->Field;
+            }
         }
         if(substr($table, -1)=='s')
             $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
@@ -191,6 +167,7 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
+            $file_contents = str_replace("VUE_DATE_PICKER_ATTRIBUTES",implode(PHP_EOL, $vue_date_picker_attributes),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Form.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.spec.js');
@@ -311,5 +288,99 @@ class AutoGenerateModelCode extends Command
         if(strstr($column_type,'timestamp')!=false)
             return "date";
         return "";
+    }
+
+    private function getVueTextField(string $field, string $singular_table_name): string {
+        return
+            '<v-flex xs12 sm6>'.PHP_EOL.
+                '<v-text-field'.PHP_EOL.
+                    'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                    ':error-messages="errors[\''.$field.'\']"'.PHP_EOL.
+                    ':rules="[]"'.PHP_EOL.
+                    ':label="$t(\''.$field.'\')"'.PHP_EOL.
+                    'name="'.$field.'"'.PHP_EOL.
+                    '@blur="formMixin_clearErrors(\''.$field.'\')"'.PHP_EOL.
+                '/>'.PHP_EOL.
+            '</v-flex>'.PHP_EOL;
+    }
+
+    private function getVueCheckboxField(string $field, string $singular_table_name): string {
+        return
+            '<v-flex xs12 sm6>'.PHP_EOL.
+                  '<v-checkbox'.PHP_EOL.
+                        'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                        ':error-messages="errors[\''.$field.'\']"'.PHP_EOL.
+                        ':rules="[]"'.PHP_EOL.
+                        ':label="$t(\''.$field.'\')"'.PHP_EOL.
+                        'name="'.$field.'"'.PHP_EOL.
+                        '@blur="formMixin_clearErrors(\''.$field.'\')"'.PHP_EOL.
+                  '/>'.PHP_EOL.
+            '</v-flex>'.PHP_EOL;
+    }
+
+    private function getVueDateField(string $field, string $date_picker_attribute): string {
+        return
+            '<v-flex xs12 sm6>'.PHP_EOL.
+                '<v-menu'.PHP_EOL.
+                    'v-model="'.$date_picker_attribute.'"'.PHP_EOL.
+                    ':close-on-content-click="false"'.PHP_EOL.
+                    'min-width="290px"'.PHP_EOL.
+                    'lazy'.PHP_EOL.
+                    'offset-y'.PHP_EOL.
+                    'full-width>'.PHP_EOL.
+                    '<v-text-field'.PHP_EOL.
+                        'slot="activator"'.PHP_EOL.
+                        ':value="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                        ':label="$t(\''.$singular_table_name.'.'.$field.'\')"'.PHP_EOL.
+                        'append-icon="event"'.PHP_EOL.
+                        'clearable'.PHP_EOL.
+                        '@blur="'.$singular_table_name.'.'.$field.' = $formatDate($event.target.value)"'.PHP_EOL.
+                    '/>'.PHP_EOL.
+                    '<v-date-picker'.PHP_EOL.
+                        'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                        ':locale="$store.state.settings.locale"'.PHP_EOL.
+                        'first-day-of-week="1"'.PHP_EOL.
+                        'no-title'.PHP_EOL.
+                        'scrollable'.PHP_EOL.
+                        '@input="'.$date_picker_attribute.' = false"'.PHP_EOL.
+                    '/>'.PHP_EOL.
+                '</v-menu>'.PHP_EOL.
+            '</v-flex>'.PHP_EOL;
+    }
+
+    private function getVueRowDetail(string $field, int $column_index): string {
+        return
+            '<v-layout'.PHP_EOL.
+                'v-if="headers['.$column_index.'].hidden"'.PHP_EOL.
+                'class="row-detail-item"'.PHP_EOL.
+                'justify-space-between'.PHP_EOL.
+                'align-center>'.PHP_EOL.
+                '<strong>'.PHP_EOL.
+                    '{{ headers['.$column_index.'].text }}:'.PHP_EOL.
+                '</strong>'.PHP_EOL.
+                '<span class="text-xs-right">'.PHP_EOL.
+                    '{{ props.item.'.$field.' }}'.PHP_EOL.
+                '</span>'.PHP_EOL.
+            '</v-layout>'.PHP_EOL;
+    }
+
+    private function getVueTableColumn(string $field, int $column_index): string {
+        if ($column_index > 0) {
+            $result = '<td v-if="!$vuetify.breakpoint[headers['.$column_index.'].hidden]">'.PHP_EOL;
+        } else {
+            $result = '<td>'.PHP_EOL;
+        }
+        $result = $result.'{{ props.item.'.$field.' }}'.PHP_EOL.
+            '</td>'.PHP_EOL;
+
+       return $result;
+    }
+
+    private function getAngularFormField(string $field, string $singular_table_name): string {
+        return
+            '<div class="form-group">'.PHP_EOL.
+            '<label>'.ucfirst($field).'</label>'.PHP_EOL.
+            '<input type="text" class="form-control" [(ngModel)]="'.$singular_table_name.'.'.$field.'" placeholder="'.ucfirst($field).'">'.PHP_EOL.
+            '</div>';
     }
 }

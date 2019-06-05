@@ -47,9 +47,15 @@ export default {
   mixins: [formMixin],
 
   props: {
-    user: Object,
+    dummy: Object,
     errors: Object,
     isSavingDisabled: Boolean,
+  },
+
+  data() {
+    return {
+      VUE_DATE_PICKER_ATTRIBUTES
+    };
   },
 
   computed: {
