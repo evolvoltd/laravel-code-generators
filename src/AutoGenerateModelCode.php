@@ -198,6 +198,11 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("VUE_TABLE_ROW_DETAILS",implode(PHP_EOL, $vue_table_row_details),$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Table.vue'),$file_contents);
 
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.spec.js');
+            $file_contents = str_replace("Dummy",$model_name,$file_contents);
+            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Table.spec.js'),$file_contents);
+
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/Dummys.vue');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
