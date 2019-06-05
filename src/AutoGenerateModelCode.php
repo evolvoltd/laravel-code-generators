@@ -65,7 +65,7 @@ class AutoGenerateModelCode extends Command
                 $table_columns[] = '<td>{{'.$singular_table_name.'.'.$value->Field.'}}</td>';
 
                 if ($value->Type === 'date') {
-                    $date_picker_attribute = 'is' . ucfirst($value->Field) . 'PickerOpen';
+                    $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
                     $vue_date_picker_attributes = $vue_date_picker_attributes.$date_picker_attribute.': false,'.PHP_EOL;
                     $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
                 } else if ($value->Type === 'tinyint(1)') {
@@ -382,5 +382,9 @@ class AutoGenerateModelCode extends Command
             '<label>'.ucfirst($field).'</label>'.PHP_EOL.
             '<input type="text" class="form-control" [(ngModel)]="'.$singular_table_name.'.'.$field.'" placeholder="'.ucfirst($field).'">'.PHP_EOL.
             '</div>';
+    }
+
+    private function toPascalCase(string $str): string {
+        return str_replace('_', '', ucwords($str, '_'));
     }
 }

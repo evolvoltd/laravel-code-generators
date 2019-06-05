@@ -9,6 +9,7 @@
     disable-initial-sort
     @update:pagination="tableMixin_changePage">
     <template slot="headers" slot-scope="props">
+      VUE_TABLE_HEADERS
       <th
         v-for="header in headers"
         v-if="!$vuetify.breakpoint[header.hidden]"
@@ -20,9 +21,7 @@
 
     <template slot="items" slot-scope="props">
       <tr class="table-row clickable" @click="tableMixin_onRowClick(props)">
-
         VUE_TABLE_COLUMNS
-
         <td v-if="isTouchDevice" class="actions-column">
           <v-menu bottom lazy left offset-y @click.native.stop>
             <v-btn
@@ -73,10 +72,7 @@
 
     <template slot="expand" slot-scope="props">
       <div class="row-detail-wrapper">
-
-        VUE_TABLE_ROW_DETAILS
-
-      </div>
+        VUE_TABLE_ROW_DETAILS</div>
     </template>
 
     <template slot="no-data">

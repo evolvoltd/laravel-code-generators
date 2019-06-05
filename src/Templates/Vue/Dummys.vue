@@ -5,7 +5,7 @@
     </h1>
 
     <DummyTable
-      v-if="!isContentLoading"
+      v-if="!isDataLoading"
       :rows="dummyArray"
       :pagination="dummyPagination"
       @rowClick="openDummyInForm"
@@ -32,7 +32,7 @@
 
     <v-scale-transition>
       <v-btn
-        v-if="isPrimaryButtonVisible"
+        v-if="!isDataLoading"
         color="primary"
         bottom
         dark
@@ -73,16 +73,13 @@
         dummyFilterParams: '',
         isDummyFormOpen: false,
 
-        isContentLoading: true,
-        isPrimaryButtonVisible: false,
+        isDataLoading: true,
         isRequestPending: false,
       };
     },
 
     created() {
       this.getPaginatedDummys(1);
-      this.isContentLoading = false;
-      this.isPrimaryButtonVisible = true;
     },
 
     methods: {

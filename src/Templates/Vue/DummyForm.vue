@@ -10,9 +10,7 @@
               </h2>
             </v-flex>
 
-            VUE_FORM_FIELDS
-
-          </v-layout>
+            VUE_FORM_FIELDS</v-layout>
         </v-container>
       </v-card-text>
 
@@ -54,8 +52,7 @@ export default {
 
   data() {
     return {
-      VUE_DATE_PICKER_ATTRIBUTES
-    };
+      VUE_DATE_PICKER_ATTRIBUTES};
   },
 
   computed: {
