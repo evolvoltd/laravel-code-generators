@@ -357,7 +357,7 @@ class AutoGenerateModelCode extends Command
                     ':label="$t(\''.$object_field.'\')"'.PHP_EOL.
                     'text-field="id"'.PHP_EOL.
                     'hint="Currently displays #id in the options list, change form field\'s text-field value to change it"'.PHP_EOL.
-                    '@itemSelected="setAutocompleteValue($event, \''.$object_field.'\')"'.PHP_EOL.
+                    '@itemSelected="formMixin_setAutocompleteValue($event, \''.$object_field.'\')"'.PHP_EOL.
                 '/>'.PHP_EOL.
             '</v-flex>'.PHP_EOL;
 
