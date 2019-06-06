@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import DummyForm from '../../src/components/DummyForm';
-import { mockDummys } from './mock/dummys';
+import { mockDummys } from './mock/dummykcs';
 
 describe('DummyForm', () => {
   let wrapper;

@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import DummyTable from '../../src/components/DummyTable';
-import { mockDummys } from './mock/dummys';
+import { mockDummys } from './mock/dummykcs';
 
 describe('DummyTable', () => {
   let wrapper;

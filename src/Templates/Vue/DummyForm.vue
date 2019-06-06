@@ -1,5 +1,5 @@
 <template>
-  <v-form @submit.prevent="save" ref="form">
+  <v-form @submit.prevent="save(dummy)" ref="form">
     <v-card>
       <v-card-text>
         <v-container grid-list-md class="pa-2">

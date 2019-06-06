@@ -22,7 +22,7 @@
       persistent
       scrollable>
       <DummyForm
-        :dummy="dummyFormItem"
+        :dummykc="dummyFormItem"
         :errors="dummyFormErrors"
         :is-saving-disabled="isRequestPending"
         @save="onDummyFormSave"
@@ -50,7 +50,7 @@
   import DummyForm from '../components/DummyForm';
   import DummyTable from '../components/DummyTable';
   import crudMixin from '../mixins/crud-mixin';
-  import { dummyService } from '../api/dummy-service';
+  import { dummyService } from '../api/dummykc-service';
 
   export default {
     name: 'DummysPage',
@@ -107,7 +107,7 @@
         this.isDummyFormOpen = false;
       },
 
-      deleteDummy() {
+      deleteDummy(dummy) {
         this.crudMixin_delete(dummyService.delete, dummyService.model, dummy);
       },
     },

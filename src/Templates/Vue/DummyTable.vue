@@ -59,7 +59,7 @@
               icon
               class="mx-0"
               @click.stop="$emit('delete', props)">
-              <v-icon>refresh</v-icon>
+              <v-icon>delete</v-icon>
             </v-btn>
             <span>
               {{ $t('delete' )}}

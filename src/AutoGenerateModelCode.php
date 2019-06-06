@@ -203,6 +203,7 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'Form.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.spec.js');
+            $file_contents = str_replace("dummykc",$model_name,$model_in_kebab_case);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELD_NAME",$vue_first_form_field,$file_contents);
@@ -217,11 +218,13 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'Table.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.spec.js');
+            $file_contents = str_replace("dummykc",$model_name,$model_in_kebab_case);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'Table.spec.js'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/Dummys.vue');
+            $file_contents = str_replace("dummykc",$model_name,$model_in_kebab_case);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'s.vue'),$file_contents);
@@ -324,10 +327,12 @@ class AutoGenerateModelCode extends Command
     }
 
     private function getVueTextField(string $field, string $singular_table_name, string $is_null): string {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+
         $result =
             '<v-flex xs12 sm6>'.PHP_EOL.
                 '<v-text-field'.PHP_EOL.
-                    'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                    'v-model="'.$form_item_name.'.'.$field.'"'.PHP_EOL.
                     ':error-messages="errors[\''.$field.'\']"'.PHP_EOL;
 
         if ($is_null === 'NO') {
@@ -406,7 +411,6 @@ class AutoGenerateModelCode extends Command
                         ':value="'.$form_item_name.'.'.$field.'"'.PHP_EOL.
                         ':label="$t(\''.$field.'\')"'.PHP_EOL.
                         'append-icon="event"'.PHP_EOL.
-                        'clearable'.PHP_EOL.
                         '@blur="'.$form_item_name.'.'.$field.' = $formatDate($event.target.value)"'.PHP_EOL.
                     '/>'.PHP_EOL.
                     '<v-date-picker'.PHP_EOL.
@@ -461,9 +465,10 @@ class AutoGenerateModelCode extends Command
 
         if ($column_type === 'tinyint(1)') {
             $result = $result.
-                '<v-icon>'.PHP_EOL.
-                    '{{ props.item.'.$field.' ? \'check_box\' : \'check_box_outline_blank\' }}'.PHP_EOL.
-                '</v-icon>'.PHP_EOL;
+                    '<v-icon>'.PHP_EOL.
+                        '{{ props.item.'.$field.' ? \'check_box\' : \'check_box_outline_blank\' }}'.PHP_EOL.
+                    '</v-icon>'.PHP_EOL.
+                '</td>'.PHP_EOL;
         } else {
             $result = $result.
                     '{{ props.item.'.$field.' }}'.PHP_EOL.
