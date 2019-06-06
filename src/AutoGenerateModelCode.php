@@ -80,8 +80,8 @@ class AutoGenerateModelCode extends Command
                     $vue_table_headers = $vue_table_headers.'{ text: this.$t(\''.$value->Field.'\') }'.PHP_EOL;
                 }
                 $vue_table_headers = $vue_table_headers.'{ text: this.$t(\''.$value->Field.'\'), hidden: \'xsOnly\' }'.PHP_EOL;
-                $vue_table_columns[] = $this->getVueTableColumn($value->Field, $column_index);
-                $vue_table_row_details[] = $this->getVueRowDetail($value->Field, $column_index);
+                $vue_table_columns[] = $this->getVueTableColumn($value->Field, $column_index, $value->Type);
+                $vue_table_row_details[] = $this->getVueRowDetail($value->Field, $column_index, $value->Type);
 
                 $form_fields[] = $this->getAngularFormField($value->Field, $singular_table_name);
 
@@ -352,8 +352,8 @@ class AutoGenerateModelCode extends Command
             '</v-flex>'.PHP_EOL;
     }
 
-    private function getVueRowDetail(string $field, int $column_index): string {
-        return
+    private function getVueRowDetail(string $field, int $column_index, string $column_type): string {
+        $result =
             '<v-layout'.PHP_EOL.
                 'v-if="headers['.$column_index.'].hidden"'.PHP_EOL.
                 'class="row-detail-item"'.PHP_EOL.
@@ -362,22 +362,42 @@ class AutoGenerateModelCode extends Command
                 '<strong>'.PHP_EOL.
                     '{{ headers['.$column_index.'].text }}:'.PHP_EOL.
                 '</strong>'.PHP_EOL.
-                '<span class="text-xs-right">'.PHP_EOL.
-                    '{{ props.item.'.$field.' }}'.PHP_EOL.
+                '<span class="text-xs-right">'.PHP_EOL;
+
+        if ($column_type === 'tinyint(1)') {
+            $result = $result.
+                '<v-icon>'.PHP_EOL.
+                    '{{ props.item.'.$field.' ? \'check_box\' : \'check_box_outline_blank\' }}'.PHP_EOL.
+                '</v-icon>'.PHP_EOL;
+        } else {
+            $result = $result.'{{ props.item.'.$field.' }}'.PHP_EOL;
+        }
+        $result = $result.
                 '</span>'.PHP_EOL.
             '</v-layout>'.PHP_EOL;
+
+        return $result;
     }
 
-    private function getVueTableColumn(string $field, int $column_index): string {
+    private function getVueTableColumn(string $field, int $column_index, string $column_type): string {
         if ($column_index > 0) {
             $result = '<td v-if="!$vuetify.breakpoint[headers['.$column_index.'].hidden]">'.PHP_EOL;
         } else {
             $result = '<td>'.PHP_EOL;
         }
-        $result = $result.'{{ props.item.'.$field.' }}'.PHP_EOL.
-            '</td>'.PHP_EOL;
 
-       return $result;
+        if ($column_type === 'tinyint(1)') {
+            $result = $result.
+                '<v-icon>'.PHP_EOL.
+                    '{{ props.item.'.$field.' ? \'check_box\' : \'check_box_outline_blank\' }}'.PHP_EOL.
+                '</v-icon>'.PHP_EOL;
+        } else {
+            $result = $result.'
+                    {{ props.item.'.$field.' }}'.PHP_EOL.
+                '</td>'.PHP_EOL;
+        }
+
+        return $result;
     }
 
     private function getAngularFormField(string $field, string $singular_table_name): string {
