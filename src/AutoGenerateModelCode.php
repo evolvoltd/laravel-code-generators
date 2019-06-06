@@ -353,6 +353,10 @@ class AutoGenerateModelCode extends Command
     }
 
     private function getVueRowDetail(string $field, int $column_index, string $column_type): string {
+        if ($column_index === 0) {
+            return '';
+        }
+
         $result =
             '<v-layout'.PHP_EOL.
                 'v-if="headers['.$column_index.'].hidden"'.PHP_EOL.
