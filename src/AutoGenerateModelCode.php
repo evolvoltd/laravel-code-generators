@@ -70,9 +70,9 @@ class AutoGenerateModelCode extends Command
                     $vue_date_picker_attributes = $vue_date_picker_attributes.$date_picker_attribute.': false,'.PHP_EOL;
                     $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
                 } else if ($value->Type === 'tinyint(1)') {
-                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name, $value->Null);
                 } else {
-                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name, $value->Null);
                 }
 
                 if ($column_index === 0) {
@@ -295,32 +295,50 @@ class AutoGenerateModelCode extends Command
         return "";
     }
 
-    private function getVueTextField(string $field, string $singular_table_name): string {
-        return
+    private function getVueTextField(string $field, string $singular_table_name, string $is_null): string {
+        $result =
             '<v-flex xs12 sm6>'.PHP_EOL.
                 '<v-text-field'.PHP_EOL.
                     'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
-                    ':error-messages="errors[\''.$field.'\']"'.PHP_EOL.
-                    ':rules="[]"'.PHP_EOL.
+                    ':error-messages="errors[\''.$field.'\']"'.PHP_EOL;
+
+        if ($is_null === 'NO') {
+            $result = $result.':rules="[required]"'.PHP_EOL;
+        } else {
+            $result = $result.':rules="[]"'.PHP_EOL;
+        }
+
+        $result = $result.
                     ':label="$t(\''.$field.'\')"'.PHP_EOL.
                     'name="'.$field.'"'.PHP_EOL.
                     '@blur="formMixin_clearErrors(\''.$field.'\')"'.PHP_EOL.
                 '/>'.PHP_EOL.
             '</v-flex>'.PHP_EOL;
+
+        return $result;
     }
 
-    private function getVueCheckboxField(string $field, string $singular_table_name): string {
-        return
+    private function getVueCheckboxField(string $field, string $singular_table_name, string $is_null): string {
+        $result =
             '<v-flex xs12 sm6>'.PHP_EOL.
-                  '<v-checkbox'.PHP_EOL.
-                        'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
-                        ':error-messages="errors[\''.$field.'\']"'.PHP_EOL.
-                        ':rules="[]"'.PHP_EOL.
-                        ':label="$t(\''.$field.'\')"'.PHP_EOL.
-                        'name="'.$field.'"'.PHP_EOL.
-                        '@blur="formMixin_clearErrors(\''.$field.'\')"'.PHP_EOL.
-                  '/>'.PHP_EOL.
+                '<v-checkbox'.PHP_EOL.
+                    'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                    ':error-messages="errors[\''.$field.'\']"'.PHP_EOL;
+
+        if ($is_null === 'NO') {
+            $result = $result.':rules="[required]"'.PHP_EOL;
+        } else {
+            $result = $result.':rules="[]"'.PHP_EOL;
+        }
+
+        $result = $result.
+                    ':label="$t(\''.$field.'\')"'.PHP_EOL.
+                    'name="'.$field.'"'.PHP_EOL.
+                    '@blur="formMixin_clearErrors(\''.$field.'\')"'.PHP_EOL.
+                '/>'.PHP_EOL.
             '</v-flex>'.PHP_EOL;
+
+        return $result;
     }
 
     private function getVueDateField(string $field, string $date_picker_attribute, string $singular_table_name): string {
