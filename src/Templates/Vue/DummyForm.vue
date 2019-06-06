@@ -37,10 +37,14 @@
 </template>
 
 <script>
+VUE_FORM_IMPORTS
 import formMixin from '../mixins/form-mixin';
 
 export default {
   name: 'DummyForm',
+
+  components: {
+    VUE_FORM_COMPONENTS},
 
   mixins: [formMixin],
 
@@ -52,7 +56,7 @@ export default {
 
   data() {
     return {
-      VUE_DATE_PICKER_ATTRIBUTES};
+      VUE_FORM_DATA_ATTRIBUTES};
   },
 
   computed: {

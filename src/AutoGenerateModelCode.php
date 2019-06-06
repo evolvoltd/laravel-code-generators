@@ -51,7 +51,10 @@ class AutoGenerateModelCode extends Command
         $vue_table_columns = [];
         $vue_table_row_details = [];
         $vue_first_form_field = '';
-        $vue_date_picker_attributes = '';
+        $vue_form_data_attributes = '';
+        $vue_form_imports = '';
+        $vue_form_components = '';
+        $is_vue_autocomplete_imported = false;
 
         $form_fields = [];
         $column_index = 0;
@@ -65,9 +68,23 @@ class AutoGenerateModelCode extends Command
                 $table_headers[] = '<th>'.ucfirst($value->Field).'</th>';
                 $table_columns[] = '<td>{{'.$singular_table_name.'.'.$value->Field.'}}</td>';
 
-                if ($value->Type === 'date') {
+                if ($value->Type === 'autocomplete') { // TODO write proper condition
+                    if (!$is_vue_autocomplete_imported) {
+                        $vue_form_imports = $vue_form_imports.
+                            'import Autocomplete from \'./Autocomplete\''.PHP_EOL;
+                        $vue_form_components = $vue_form_components.
+                            'Autocomplete,'.PHP_EOL;
+                    }
+                    $vue_form_imports = $vue_form_imports.
+                        'import { '.$singular_table_name.'Service } from \'../services/'.$singular_table_name.'-service\';';
+                    $vue_form_data_attributes = $vue_form_data_attributes.
+                        $singular_table_name.'SearchFunction: '.$singular_table_name.'Service.search,';
+
+                    $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $singular_table_name);
+                    $is_vue_autocomplete_imported = true;
+                } else if ($value->Type === 'date') {
                     $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
-                    $vue_date_picker_attributes = $vue_date_picker_attributes.$date_picker_attribute.': false,'.PHP_EOL;
+                    $vue_form_data_attributes = $vue_form_data_attributes.$date_picker_attribute.': false,'.PHP_EOL;
                     $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
                 } else if ($value->Type === 'tinyint(1)') {
                     $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name, $value->Null);
@@ -171,7 +188,9 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
-            $file_contents = str_replace("VUE_DATE_PICKER_ATTRIBUTES",$vue_date_picker_attributes,$file_contents);
+            $file_contents = str_replace("VUE_FORM_DATA_ATTRIBUTES",$vue_form_data_attributes,$file_contents);
+            $file_contents = str_replace("VUE_FORM_IMPORTS",$vue_form_imports,$file_contents);
+            $file_contents = str_replace("VUE_FORM_COMPONENTS",$vue_form_components,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Form.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.spec.js');
@@ -314,6 +333,22 @@ class AutoGenerateModelCode extends Command
                     '@blur="formMixin_clearErrors(\''.$field.'\')"'.PHP_EOL.
                 '/>'.PHP_EOL.
             '</v-flex>'.PHP_EOL;
+
+        return $result;
+    }
+
+    private function getVueAutocompleteField(string $id_field, string $singular_table_name): string {
+        $object_field = $id_field; // TODO replace trailing _id
+        $result =
+            '<v-flex xs12 sm6>'.PHP_EOL.
+                '<Autocomplete'.PHP_EOL.
+                    ':search-function="clientSearchFunction"'.PHP_EOL.
+                    ':item="'.$singular_table_name.$object_field.'"'.PHP_EOL.
+                    ':error-messages="errors.'.$id_field.'"'.PHP_EOL.
+                    ':label="$t(\''.$object_field.'\')"'.PHP_EOL.
+                    'text-field="name"'.PHP_EOL. // TODO consider making this dynamic
+                    '@itemSelected="setAutocompleteValue($event, \''.$object_field.'\')"'.PHP_EOL.
+                '/>'.PHP_EOL;
 
         return $result;
     }
