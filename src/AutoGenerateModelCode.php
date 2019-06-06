@@ -92,7 +92,7 @@ class AutoGenerateModelCode extends Command
                     $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
                     $is_vue_autocomplete_imported = true;
                 } else if ($value->Type === 'date') {
-                    $date_picker_attribute = 'is' . $model_name . 'PickerOpen';
+                    $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
                     $vue_form_data_attributes = $vue_form_data_attributes.$date_picker_attribute.': false,'.PHP_EOL;
                     $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
                 } else if ($value->Type === 'tinyint(1)') {
@@ -193,6 +193,7 @@ class AutoGenerateModelCode extends Command
             $model_in_kebab_case = $this->toKebabCase($singular_table_name);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
+            $file_contents = str_replace("dummysc",$singular_table_name,$file_contents);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
@@ -478,6 +479,10 @@ class AutoGenerateModelCode extends Command
             '<label>'.ucfirst($field).'</label>'.PHP_EOL.
             '<input type="text" class="form-control" [(ngModel)]="'.$singular_table_name.'.'.$field.'" placeholder="'.ucfirst($field).'">'.PHP_EOL.
             '</div>';
+    }
+
+    private function toPascalCase(string $str): string {
+        return str_replace('_', '', ucwords($str, '_'));
     }
 
     private function toCamelCase(string $str): string {
