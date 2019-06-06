@@ -77,9 +77,10 @@ class AutoGenerateModelCode extends Command
 
                 if ($column_index === 0) {
                     $vue_first_form_field = $value->Field;
-                    $vue_table_headers = $vue_table_headers.'{ text: this.$t(\''.$value->Field.'\') }'.PHP_EOL;
+                    $vue_table_headers = $vue_table_headers.'{ text: this.$t(\''.$value->Field.'\') },'.PHP_EOL;
+                } else {
+                    $vue_table_headers = $vue_table_headers.'{ text: this.$t(\''.$value->Field.'\'), hidden: \'xsOnly\' },'.PHP_EOL;
                 }
-                $vue_table_headers = $vue_table_headers.'{ text: this.$t(\''.$value->Field.'\'), hidden: \'xsOnly\' }'.PHP_EOL;
                 $vue_table_columns[] = $this->getVueTableColumn($value->Field, $column_index, $value->Type);
                 $vue_table_row_details[] = $this->getVueRowDetail($value->Field, $column_index, $value->Type);
 
@@ -335,7 +336,7 @@ class AutoGenerateModelCode extends Command
                     '<v-text-field'.PHP_EOL.
                         'slot="activator"'.PHP_EOL.
                         ':value="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
-                        ':label="$t(\''.$singular_table_name.'.'.$field.'\')"'.PHP_EOL.
+                        ':label="$t(\''.$field.'\')"'.PHP_EOL.
                         'append-icon="event"'.PHP_EOL.
                         'clearable'.PHP_EOL.
                         '@blur="'.$singular_table_name.'.'.$field.' = $formatDate($event.target.value)"'.PHP_EOL.
@@ -396,8 +397,8 @@ class AutoGenerateModelCode extends Command
                     '{{ props.item.'.$field.' ? \'check_box\' : \'check_box_outline_blank\' }}'.PHP_EOL.
                 '</v-icon>'.PHP_EOL;
         } else {
-            $result = $result.'
-                    {{ props.item.'.$field.' }}'.PHP_EOL.
+            $result = $result.
+                    '{{ props.item.'.$field.' }}'.PHP_EOL.
                 '</td>'.PHP_EOL;
         }
 

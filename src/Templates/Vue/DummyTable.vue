@@ -9,7 +9,6 @@
     disable-initial-sort
     @update:pagination="tableMixin_changePage">
     <template slot="headers" slot-scope="props">
-      VUE_TABLE_HEADERS
       <th
         v-for="header in headers"
         v-if="!$vuetify.breakpoint[header.hidden]"
