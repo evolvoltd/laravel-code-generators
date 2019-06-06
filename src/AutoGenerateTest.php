@@ -40,7 +40,7 @@ class AutoGenerateTest extends Command
     public function handle()
     {
         $table = $this->argument('table');
-
+        
         $singular_table_name = (substr($table, strlen($table)-4, 3)=='ies')?(substr($table, 0, -3).'y'):(substr($table, 0, -1));
         if(substr($table, -1)=='s')
             $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
@@ -49,7 +49,7 @@ class AutoGenerateTest extends Command
 
 
         $testName = $model_name;//gument('test_name');
-        $route = lcfirst($model_name) . 's';//$this->argument('api_resource_route');
+        $route = str_replace('_', '-', $table);
 
 
         $fillable_fields = '';
