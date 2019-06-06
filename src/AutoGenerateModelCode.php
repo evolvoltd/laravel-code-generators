@@ -68,7 +68,7 @@ class AutoGenerateModelCode extends Command
                 $table_headers[] = '<th>'.ucfirst($value->Field).'</th>';
                 $table_columns[] = '<td>{{'.$singular_table_name.'.'.$value->Field.'}}</td>';
 
-                if ($value->Type === 'autocomplete') { // TODO write proper condition
+                if (strpos($value->Field, '_id') !== false) {
                     if (!$is_vue_autocomplete_imported) {
                         $vue_form_imports = $vue_form_imports.
                             'import Autocomplete from \'./Autocomplete\''.PHP_EOL;
@@ -338,7 +338,7 @@ class AutoGenerateModelCode extends Command
     }
 
     private function getVueAutocompleteField(string $id_field, string $singular_table_name): string {
-        $object_field = $id_field; // TODO replace trailing _id
+        $object_field = str_replace('_id', '', $id_field);
         $result =
             '<v-flex xs12 sm6>'.PHP_EOL.
                 '<Autocomplete'.PHP_EOL.
