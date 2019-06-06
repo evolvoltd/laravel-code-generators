@@ -85,9 +85,9 @@ class AutoGenerateModelCode extends Command
                     $object_field = str_replace('_id', '', $value->Field);
                     $object_field = $this->toCamelCase($object_field);
                     $vue_form_imports = $vue_form_imports.
-                        'import { '.$object_field.'Service } from \'../services/'.$object_field.'-service\';';
+                        'import { '.$object_field.'Service } from \'../services/'.$object_field.'-service\';'.PHP_EOL;
                     $vue_form_data_attributes = $vue_form_data_attributes.
-                        $object_field.'SearchFunction: '.$object_field.'Service.search,';
+                        $object_field.'SearchFunction: '.$object_field.'Service.search,'.PHP_EOL;
 
                     $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
                     $is_vue_autocomplete_imported = true;
@@ -189,12 +189,11 @@ class AutoGenerateModelCode extends Command
                 mkdir($dir, 0777, true);
             }
 
-            $model_in_snake_case = $singular_table_name;
             $model_in_camel_case = $this->toCamelCase($singular_table_name);
             $model_in_kebab_case = $this->toKebabCase($singular_table_name);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
-            $file_contents = str_replace("dummysc",$model_in_snake_case,$file_contents);
+            $file_contents = str_replace("dummysc",$singular_table_name,$file_contents);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);

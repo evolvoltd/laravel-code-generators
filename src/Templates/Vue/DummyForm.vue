@@ -61,7 +61,7 @@ export default {
 
   computed: {
     formTitle() {
-      return this.dummy.id ? this.$t('new_dummy') : this.$t('edit_dummy');
+      return this.dummy.id ? this.$t('new_dummysc') : this.$t('edit_dummysc');
     },
   },
 };
