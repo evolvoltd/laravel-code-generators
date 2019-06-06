@@ -75,12 +75,15 @@ class AutoGenerateModelCode extends Command
                         $vue_form_components = $vue_form_components.
                             'Autocomplete,'.PHP_EOL;
                     }
-                    $vue_form_imports = $vue_form_imports.
-                        'import { '.$singular_table_name.'Service } from \'../services/'.$singular_table_name.'-service\';';
-                    $vue_form_data_attributes = $vue_form_data_attributes.
-                        $singular_table_name.'SearchFunction: '.$singular_table_name.'Service.search,';
 
-                    $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $singular_table_name);
+                    $object_field = str_replace('_id', '', $value->Field);
+                    $object_field = $this->toCamelCase($object_field);
+                    $vue_form_imports = $vue_form_imports.
+                        'import { '.$object_field.'Service } from \'../services/'.$object_field.'-service\';';
+                    $vue_form_data_attributes = $vue_form_data_attributes.
+                        $object_field.'SearchFunction: '.$object_field.'Service.search,';
+
+                    $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
                     $is_vue_autocomplete_imported = true;
                 } else if ($value->Type === 'date') {
                     $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
@@ -337,18 +340,18 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueAutocompleteField(string $id_field, string $singular_table_name): string {
-        $object_field = str_replace('_id', '', $id_field);
+    private function getVueAutocompleteField(string $id_field, string $object_field, string $singular_table_name): string {
         $result =
             '<v-flex xs12 sm6>'.PHP_EOL.
                 '<Autocomplete'.PHP_EOL.
-                    ':search-function="clientSearchFunction"'.PHP_EOL.
+                    ':search-function="'.$object_field.'SearchFunction"'.PHP_EOL.
                     ':item="'.$singular_table_name.$object_field.'"'.PHP_EOL.
                     ':error-messages="errors.'.$id_field.'"'.PHP_EOL.
                     ':label="$t(\''.$object_field.'\')"'.PHP_EOL.
                     'text-field="name"'.PHP_EOL. // TODO consider making this dynamic
                     '@itemSelected="setAutocompleteValue($event, \''.$object_field.'\')"'.PHP_EOL.
-                '/>'.PHP_EOL;
+                '/>'.PHP_EOL.
+            '</v-flex>'.PHP_EOL;
 
         return $result;
     }
@@ -468,5 +471,9 @@ class AutoGenerateModelCode extends Command
 
     private function toPascalCase(string $str): string {
         return str_replace('_', '', ucwords($str, '_'));
+    }
+
+    private function toCamelCase(string $str): string {
+        return str_replace('_', '', lcfirst(ucwords($str, '_')));
     }
 }
