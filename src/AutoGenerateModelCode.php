@@ -47,7 +47,7 @@ class AutoGenerateModelCode extends Command
         $angular_model_attributes = [];
 
         $vue_form_fields = [];
-        $vue_table_headers = 'const headers = ['.PHP_EOL;
+        $vue_table_headers = '';
         $vue_table_columns = [];
         $vue_table_row_details = [];
         $vue_first_form_field = '';

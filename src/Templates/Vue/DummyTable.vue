@@ -103,7 +103,8 @@ export default {
     },
 
     headers() {
-      VUE_TABLE_HEADERS
+      const headers = [
+        VUE_TABLE_HEADERS];
       if (this.isTouchDevice) {
         headers.push({ text: '' });
       }
