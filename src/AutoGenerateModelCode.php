@@ -241,7 +241,9 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table_in_kebab_case.'/'.$model_in_kebab_case.'-service.js'),$file_contents);
 
-            $vue_translations = substr($vue_translations, 0, -1);
+            $vue_translations = $vue_translations.
+                '"new_'.$singular_table_name.'": "",'.PHP_EOL.
+                '"edit_'.$singular_table_name.'": ""';
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/translations.json');
             $file_contents = str_replace("VUE_TRANSLATIONS",$vue_translations,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table_in_kebab_case.'/translations.json'),$file_contents);
