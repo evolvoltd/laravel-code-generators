@@ -55,6 +55,7 @@ class AutoGenerateModelCode extends Command
         $vue_form_imports = '';
         $vue_form_components = '';
         $is_vue_autocomplete_imported = false;
+        $vue_translations = '';
 
         $form_fields = [];
         $column_index = 0;
@@ -91,14 +92,18 @@ class AutoGenerateModelCode extends Command
 
                     $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
                     $is_vue_autocomplete_imported = true;
+                    $vue_translations = $vue_translations.'"'.$object_field.'": "",'.PHP_EOL;
                 } else if ($value->Type === 'date') {
                     $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
                     $vue_form_data_attributes = $vue_form_data_attributes.$date_picker_attribute.': false,'.PHP_EOL;
                     $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
+                    $vue_translations = $vue_translations.'"'.$value->Field.'": "",'.PHP_EOL;
                 } else if ($value->Type === 'tinyint(1)') {
                     $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name, $value->Null);
+                    $vue_translations = $vue_translations.'"'.$value->Field.'": "",'.PHP_EOL;
                 } else {
                     $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name, $value->Null);
+                    $vue_translations = $vue_translations.'"'.$value->Field.'": "",'.PHP_EOL;
                 }
 
                 if ($column_index === 0) {
@@ -233,6 +238,11 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_in_kebab_case.'-service.js'),$file_contents);
+
+            $vue_translations = substr($vue_translations, 0, -1);
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/translations.json');
+            $file_contents = str_replace("VUE_TRANSLATIONS",$vue_translations,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$this->toKebabCase($table).'/translations.json'),$file_contents);
 
         } else {
             //GENERATE BACK-END CODE START
