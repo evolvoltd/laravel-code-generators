@@ -189,11 +189,12 @@ class AutoGenerateModelCode extends Command
                 mkdir($dir, 0777, true);
             }
 
+            $model_in_snake_case = $singular_table_name;
             $model_in_camel_case = $this->toCamelCase($singular_table_name);
             $model_in_kebab_case = $this->toKebabCase($singular_table_name);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
-            $file_contents = str_replace("dummysc",$singular_table_name,$file_contents);
+            $file_contents = str_replace("dummysc",$model_in_snake_case,$file_contents);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
