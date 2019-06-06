@@ -59,6 +59,12 @@ class AutoGenerateModelCode extends Command
         $form_fields = [];
         $column_index = 0;
         $singular_table_name = (substr($table, strlen($table)-4, 3)=='ies')?(substr($table, 0, -3).'y'):(substr($table, 0, -1));
+
+        if(substr($table, -1)=='s')
+            $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
+        else
+            $model_name = str_replace('_', '', ucwords($table, '_'));
+
         foreach ($columns as $value) {
             if(!in_array($value->Field,['id','created_at','updated_at','deleted_at','created_by','updated_by','deleted_by'])) {
                 $fillable_columns[] = $value->Field;
@@ -86,7 +92,7 @@ class AutoGenerateModelCode extends Command
                     $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
                     $is_vue_autocomplete_imported = true;
                 } else if ($value->Type === 'date') {
-                    $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
+                    $date_picker_attribute = 'is' . $model_name . 'PickerOpen';
                     $vue_form_data_attributes = $vue_form_data_attributes.$date_picker_attribute.': false,'.PHP_EOL;
                     $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
                 } else if ($value->Type === 'tinyint(1)') {
@@ -113,10 +119,6 @@ class AutoGenerateModelCode extends Command
                 $boolean_columns[] = $value->Field;
             }
         }
-        if(substr($table, -1)=='s')
-            $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
-        else
-            $model_name = str_replace('_', '', ucwords($table, '_'));
 
         if($this->option('only-ng')){
             $dir = app_path('Console/Commands/Output/Angular/'.$table.'/');
@@ -187,43 +189,46 @@ class AutoGenerateModelCode extends Command
                 mkdir($dir, 0777, true);
             }
 
+            $model_in_camel_case = $this->toCamelCase($singular_table_name);
+            $model_in_kebab_case = $this->toKebabCase($singular_table_name);
+
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
-            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELDS",implode(PHP_EOL, $vue_form_fields),$file_contents);
             $file_contents = str_replace("VUE_FORM_DATA_ATTRIBUTES",$vue_form_data_attributes,$file_contents);
             $file_contents = str_replace("VUE_FORM_IMPORTS",$vue_form_imports,$file_contents);
             $file_contents = str_replace("VUE_FORM_COMPONENTS",$vue_form_components,$file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Form.vue'),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'Form.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.spec.js');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
-            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELD_NAME",$vue_first_form_field,$file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Form.spec.js'),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'Form.spec.js'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.vue');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
-            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
+            $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             $file_contents = str_replace("VUE_TABLE_HEADERS",$vue_table_headers,$file_contents);
             $file_contents = str_replace("VUE_TABLE_COLUMNS",implode(PHP_EOL, $vue_table_columns),$file_contents);
             $file_contents = str_replace("VUE_TABLE_ROW_DETAILS",implode(PHP_EOL, $vue_table_row_details),$file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Table.vue'),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'Table.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.spec.js');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
-            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'Table.spec.js'),$file_contents);
+            $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'Table.spec.js'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/Dummys.vue');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
-            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.ucfirst($singular_table_name).'s.vue'),$file_contents);
+            $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_name.'s.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/dummy-service.js');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
-            $file_contents = str_replace("dummy",$singular_table_name,$file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$singular_table_name.'-service.js'),$file_contents);
+            $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table.'/'.$model_in_kebab_case.'-service.js'),$file_contents);
 
         } else {
             //GENERATE BACK-END CODE START
@@ -341,14 +346,16 @@ class AutoGenerateModelCode extends Command
     }
 
     private function getVueAutocompleteField(string $id_field, string $object_field, string $singular_table_name): string {
+        $form_item_name = $this->toCamelCase($singular_table_name);
         $result =
             '<v-flex xs12 sm6>'.PHP_EOL.
                 '<Autocomplete'.PHP_EOL.
                     ':search-function="'.$object_field.'SearchFunction"'.PHP_EOL.
-                    ':item="'.$singular_table_name.$object_field.'"'.PHP_EOL.
+                    ':item="'.$form_item_name.'.'.$object_field.'"'.PHP_EOL.
                     ':error-messages="errors.'.$id_field.'"'.PHP_EOL.
                     ':label="$t(\''.$object_field.'\')"'.PHP_EOL.
-                    'text-field="name"'.PHP_EOL. // TODO consider making this dynamic
+                    'text-field="id"'.PHP_EOL.
+                    'hint="Currently displays #id in the options list, change form field\'s text-field value to change it"'.PHP_EOL.
                     '@itemSelected="setAutocompleteValue($event, \''.$object_field.'\')"'.PHP_EOL.
                 '/>'.PHP_EOL.
             '</v-flex>'.PHP_EOL;
@@ -357,10 +364,12 @@ class AutoGenerateModelCode extends Command
     }
 
     private function getVueCheckboxField(string $field, string $singular_table_name, string $is_null): string {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+
         $result =
             '<v-flex xs12 sm6>'.PHP_EOL.
                 '<v-checkbox'.PHP_EOL.
-                    'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                    'v-model="'.$form_item_name.'.'.$field.'"'.PHP_EOL.
                     ':error-messages="errors[\''.$field.'\']"'.PHP_EOL;
 
         if ($is_null === 'NO') {
@@ -380,6 +389,8 @@ class AutoGenerateModelCode extends Command
     }
 
     private function getVueDateField(string $field, string $date_picker_attribute, string $singular_table_name): string {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+
         return
             '<v-flex xs12 sm6>'.PHP_EOL.
                 '<v-menu'.PHP_EOL.
@@ -391,14 +402,14 @@ class AutoGenerateModelCode extends Command
                     'full-width>'.PHP_EOL.
                     '<v-text-field'.PHP_EOL.
                         'slot="activator"'.PHP_EOL.
-                        ':value="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                        ':value="'.$form_item_name.'.'.$field.'"'.PHP_EOL.
                         ':label="$t(\''.$field.'\')"'.PHP_EOL.
                         'append-icon="event"'.PHP_EOL.
                         'clearable'.PHP_EOL.
-                        '@blur="'.$singular_table_name.'.'.$field.' = $formatDate($event.target.value)"'.PHP_EOL.
+                        '@blur="'.$form_item_name.'.'.$field.' = $formatDate($event.target.value)"'.PHP_EOL.
                     '/>'.PHP_EOL.
                     '<v-date-picker'.PHP_EOL.
-                        'v-model="'.$singular_table_name.'.'.$field.'"'.PHP_EOL.
+                        'v-model="'.$form_item_name.'.'.$field.'"'.PHP_EOL.
                         ':locale="$store.state.settings.locale"'.PHP_EOL.
                         'first-day-of-week="1"'.PHP_EOL.
                         'no-title'.PHP_EOL.
@@ -469,11 +480,11 @@ class AutoGenerateModelCode extends Command
             '</div>';
     }
 
-    private function toPascalCase(string $str): string {
-        return str_replace('_', '', ucwords($str, '_'));
-    }
-
     private function toCamelCase(string $str): string {
         return str_replace('_', '', lcfirst(ucwords($str, '_')));
+    }
+
+    private function toKebabCase(string $str): string {
+        return str_replace('_', '-', strtolower($str));
     }
 }
