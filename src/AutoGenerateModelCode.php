@@ -190,6 +190,7 @@ class AutoGenerateModelCode extends Command
 
         } else if ($this->option('only-vue')) {
             $table_in_kebab_case = $this->toKebabCase($table);
+            $table_in_pascal_case = $this->toPascalCase($table);
 
             $dir = app_path('Console/Commands/Output/Vue/'.$table_in_kebab_case.'/');
             if (!file_exists($dir)) {
@@ -210,7 +211,7 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table_in_kebab_case.'/'.$model_name.'Form.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.spec.js');
-            $file_contents = str_replace("dummykc",$model_name,$model_in_kebab_case);
+            $file_contents = str_replace("dummykc",$model_in_kebab_case,$file_contents);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             $file_contents = str_replace("VUE_FORM_FIELD_NAME",$vue_first_form_field,$file_contents);
@@ -225,16 +226,16 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table_in_kebab_case.'/'.$model_name.'Table.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.spec.js');
-            $file_contents = str_replace("dummykc",$model_name,$model_in_kebab_case);
+            $file_contents = str_replace("dummykc",$model_in_kebab_case,$file_contents);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/'.$table_in_kebab_case.'/'.$model_name.'Table.spec.js'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/Dummys.vue');
-            $file_contents = str_replace("dummykc",$model_name,$model_in_kebab_case);
+            $file_contents = str_replace("dummykc",$model_in_kebab_case,$file_contents);
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
             $file_contents = str_replace("dummy",$model_in_camel_case,$file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table_in_kebab_case.'/'.$model_name.'s.vue'),$file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/'.$table_in_kebab_case.'/'.$table_in_pascal_case.'.vue'),$file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/dummy-service.js');
             $file_contents = str_replace("Dummy",$model_name,$file_contents);
