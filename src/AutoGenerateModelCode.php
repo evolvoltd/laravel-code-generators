@@ -160,13 +160,19 @@ class AutoGenerateModelCode extends Command
                             $foreign = str_replace("')->references", '', $refs[1]);
                             $reference = str_replace("')->on", '', $refs[2]);
                             $foreign_table = str_replace("');\n", '', $refs[3]);
+                            $foreign_table = str_replace("')->onDelete", '', $foreign_table);
 
                             $singular_foreign_table_name = (substr($foreign_table, strlen($foreign_table) - 4, 3) == 'ies') ? (substr($foreign_table, 0, -3) . 'y') : (substr($foreign_table, 0, -1));
 
-                            if (substr($foreign_table, -1) == 's')
+                            
+                            if (substr($foreign_table, -1) == 's') {
+                                $this->info($singular_foreign_table_name);
                                 $foreign_model_name = str_replace('_', '', ucwords($singular_foreign_table_name, '_'));
+                            }
                             else
+                            {
                                 $foreign_model_name = str_replace('_', '', ucwords($foreign_table, '_'));
+                            }
                             $replacement = "\n".'    public function '.lcfirst($foreign_model_name).'()
     {
         return $this->hasOne(\'App\Models\\'.$foreign_model_name .'\',\'id\',\''.$foreign.'\');
@@ -216,8 +222,9 @@ class AutoGenerateModelCode extends Command
 
 
             //generate crud route
+            $route = str_replace('_', '-', $table);
             $file_contents = file_get_contents(base_path('routes/api.php'));
-            $file_contents .= "\n" . 'Route::apiResource(\'' . lcfirst($model_name) . 's' . '\', \'' . $model_name . 'sController\');';
+            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name . 'sController\');';
             file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
@@ -252,7 +259,7 @@ class AutoGenerateModelCode extends Command
             if (!$this->option('no-tr')) {
                 Artisan::call('generate:test-response',
                     [
-                        'test_name' => $model_name . '/' . $model_name . 'Test'
+                        'path/test_name' => $model_name . '/' . $model_name . 'Test'
                     ]
                 );
             }
