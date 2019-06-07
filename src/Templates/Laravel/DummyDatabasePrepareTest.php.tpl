@@ -7,7 +7,7 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class DataBasePrepairTest extends TestCase
+class DatabasePrepareTest extends TestCase
 {
 
     public function testDataBase()

@@ -2,7 +2,7 @@
 
 namespace Evolvo\LaravelCodeGenerators\TestLogic;
 
-use App\User;
+use App\Models\User;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
 

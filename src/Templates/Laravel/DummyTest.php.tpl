@@ -9,7 +9,7 @@ class testClass extends MasterTest
 {
     public function testStore()
     {
-    DB::table('/*table*/')->truncate();
+      DB::table('/*table*/')->truncate();
         $this->master(
             [
                 'method' => 'post',
@@ -94,9 +94,34 @@ class testClass extends MasterTest
                 'test_json' => true,
                 'json' => [/*'show_json'*/]
 
-]
+            ]
         );
     }
+
+    public function testStoreValidate()
+    {
+        $this->master(
+            [
+                'method' => 'post',
+                'uri' => 'api/store',
+                'status' => 422,
+                'user_id' => 2,
+            ]
+        );
+    }
+
+    public function testUpdateValidate()
+    {
+        $this->master(
+            [
+               'method' => 'put',
+               'uri' => 'api/update',
+               'status' => 422,
+               'user_id' => 2,
+            ]
+        );
+    }
+
 
     public function testDelete()
     {
