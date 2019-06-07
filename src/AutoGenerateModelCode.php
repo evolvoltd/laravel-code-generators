@@ -7,7 +7,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
 
 class AutoGenerateModelCode extends Command
 {
@@ -16,7 +15,7 @@ class AutoGenerateModelCode extends Command
      *
      * @var string
      */
-    protected $signature = 'scaffold {database_table} {--only-ng} {--no-tr} {--no-t} {--only-vue}';
+    protected $signature = 'scaffold {database_table} {--only-ng} {--only-vue}';
 
     /**
      * The console command description.
@@ -262,82 +261,16 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("dummy", $table, $file_contents);
             $file_contents = str_replace("fillable = []", 'fillable = [' . PHP_EOL . '        "' . implode('",' . PHP_EOL . '        "', $fillable_columns) . '"' . PHP_EOL . '    ]', $file_contents);
             $file_contents = str_replace("casts = []", 'casts = [' . PHP_EOL . '        "' . implode('" => "boolean",' . PHP_EOL . '        "', $boolean_columns) . '" => "boolean"' . PHP_EOL . '    ]', $file_contents);
+
             file_put_contents(app_path('Models/' . $model_name . '.php'), $file_contents);
-            //generate model relations
-            $migrationsDir = scandir(base_path('database/migrations'));
-            foreach ($migrationsDir as $file) {
-                if (strpos($file, 'create_' . $table) !== false) {
-                    $lines = file(base_path('database/migrations/' . $file));
-                    foreach ($lines as $line) {
-
-                        if (strpos($line, '$table->foreign(') !== false) {
-                            $refs = explode('(\'', $line);
-                            $foreign = str_replace("')->references", '', $refs[1]);
-                            $reference = str_replace("')->on", '', $refs[2]);
-                            $foreign_table = str_replace("');\n", '', $refs[3]);
-                            $foreign_table = str_replace("')->onDelete", '', $foreign_table);
-
-                            $singular_foreign_table_name = (substr($foreign_table, strlen($foreign_table) - 4, 3) == 'ies') ? (substr($foreign_table, 0, -3) . 'y') : (substr($foreign_table, 0, -1));
-
-
-                            if (substr($foreign_table, -1) == 's') {
-                                $this->info($singular_foreign_table_name);
-                                $foreign_model_name = str_replace('_', '', ucwords($singular_foreign_table_name, '_'));
-                            } else {
-                                $foreign_model_name = str_replace('_', '', ucwords($foreign_table, '_'));
-                            }
-                            $replacement = "\n" . '    public function ' . lcfirst($foreign_model_name) . '()
-    {
-        return $this->hasOne(\'App\Models\\' . $foreign_model_name . '\',\'id\',\'' . $foreign . '\');
-    }' . "\n}";
-                            $file_contents = substr($file_contents, 0, -2) . $replacement;
-
-
-                            $foreign_model_contents = file_get_contents(app_path('Models/' . $foreign_model_name . '.php'));
-                            $replacement = "\n" . '    public function ' . $table . '()
-    {
-        return $this->hasMany(\'App\Models\\' . $model_name . '\',\'' . $foreign . '\',\'id\');
-    }' . "\n}";
-                            $foreign_model_contents = substr($foreign_model_contents, 0, -2) . $replacement;
-                            file_put_contents(app_path('Models/' . $foreign_model_name . '.php'), $foreign_model_contents);
-                        }
-                    }
-                }
-            }
-            file_put_contents(app_path('Models/' . $model_name . '.php'), $file_contents);
-
-
             //fill custom translation rules
-
-            $dir = app_path('Services');
-            if (!file_exists($dir)) {
-                mkdir($dir, 0777, true);
-            }
-
-            //generate service
-            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyService.php.tpl');
-            $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("dummyService", lcfirst($model_name) . "Service", $file_contents);
-            $file_contents = str_replace("dummies", lcfirst($model_name) . "s", $file_contents);
-            $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
-            file_put_contents(app_path('Services/' . $model_name . 'Service' . '.php'), $file_contents);
-
 
             //generate controller
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyController.php.tpl');
             $file_contents = str_replace("DummyController", $model_name . 'sController', $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("dummyService", lcfirst($model_name) . "Service", $file_contents);
-            $file_contents = str_replace("dummies", lcfirst($model_name) . "s", $file_contents);
-            $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
             file_put_contents(app_path('Http/Controllers/' . $model_name . 'sController' . '.php'), $file_contents);
 
-
-            //generate crud route
-            $route = str_replace('_', '-', $table);
-            $file_contents = file_get_contents(base_path('routes/api.php'));
-            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name . 'sController\');';
-            file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
             if (!file_exists($dir)) {
@@ -348,43 +281,25 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("return []", 'return [' . PHP_EOL . '        ' . implode(',' . PHP_EOL . '        ', $validation_rules) . '' . PHP_EOL . '    ]', $file_contents);
             file_put_contents(app_path('Http/Requests/' . $model_name . '/StoreOrUpdate' . '.php'), $file_contents);
-
-
-            $dir = app_path('Logic/Helpers/Traits');
-            if (!file_exists($dir)) {
-                mkdir($dir, 0777, true);
-            }
-
-            //generate bootable trait
-            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Traits/DummyBootableTrait.php.tpl');
-            file_put_contents(app_path('Logic/Helpers/Traits/BootableTrait.php'), $file_contents);
-
         }
 
-        // if ($this->confirm('Create tests for generated CRUD?')) {
-        if (!$this->option('no-t')) {
+
+        if ($this->confirm('Create tests for generated CRUD?')) {
             Artisan::call('generate:test',
                 [
+                    'test_name' => $model_name,
+                    'api_resource_route' => $table,
                     'table' => $table
                 ]
             );
-            if (!$this->option('no-tr')) {
-                Artisan::call('generate:test-response',
-                    [
-                        'path/test_name' => $model_name . '/' . $model_name . 'Test'
-                    ]
-                );
-            }
+            $this->info("Tests created!");
         }
-        $this->info("Tests created!");
-
-
-        // }
 
         $this->info("Code generated succesfully!");
         //generate policy
         //put policy to policies list
 
+        //genereate routes
 
         //GENERATE BACK-END CODE END
 
