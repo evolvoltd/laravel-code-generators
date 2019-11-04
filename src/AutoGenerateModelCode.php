@@ -16,7 +16,9 @@ class AutoGenerateModelCode extends Command
      *
      * @var string
      */
+
     protected $signature = 'scaffold {database_table} {--only-ng} {--only-vue} {--tr} {--no-t}';
+
 
     /**
      * The console command description.
