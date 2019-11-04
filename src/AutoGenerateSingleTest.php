@@ -13,7 +13,7 @@ class AutoGenerateSingleTest extends Command
      *
      * @var string
      */
-    protected $signature = 'generate:single-test {path/test_name} {api_route?} {table?}';
+    protected $signature = 'generate:single-test {path/test_name} {api_route?} {table?} {--old-version}';
 
     /**
      * The console command description.
@@ -42,11 +42,13 @@ class AutoGenerateSingleTest extends Command
         $testNamePath = $this->argument('path/test_name');
         $route = $this->argument('api_route');
         $table = $this->argument('table');
-        $options = $this->options();
 
         $contents = file_get_contents(base_path('tests/Feature/' . $testNamePath . '.php'));
 
-        $replacement = file_get_contents(__DIR__ . '/Templates/Laravel/DummySingleTest.php.tpl');
+        $replacement = file_get_contents(__DIR__ . '/Templates/Laravel/DummySingleNewTest.php.tpl');
+        if($this->option('old-version')) {
+            $replacement = file_get_contents(__DIR__ . '/Templates/Laravel/DummySingleTest.php.tpl');
+        }
         $contents = substr($contents, 0, -2) . $replacement;
         $name = $this->ask('enter test name (E.g. Statistics)');
 

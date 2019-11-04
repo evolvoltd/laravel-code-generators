@@ -15,14 +15,14 @@ class DummyService
         return $query->paginate(50);
     }
 
-    public function createDummy(Request $request){
-
+    public function createDummy(Request $request)
+    {
         dummyItem = Dummy::create($request->all());
         return dummyItem;
     }
 
-    public function updateDummy(Request $request, Dummy dummyItem){
-
+    public function updateDummy(Request $request, Dummy dummyItem)
+    {
         dummyItem->update($request->all());
         return dummyItem;
     }

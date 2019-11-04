@@ -8,9 +8,8 @@ use Tests\TestCase;
 
 class MasterTest extends TestCase
 {
-    
     function master($testData){
-        
+
         $auth = $testData['auth']??true;
         $status = $testData['status']??200;
         $uri = $testData['uri']??'';
@@ -30,7 +29,7 @@ class MasterTest extends TestCase
        if($auth) Passport::actingAs($user);
 
         $this->withHeaders([
-            
+
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',]);
 
@@ -56,13 +55,12 @@ class MasterTest extends TestCase
                 $chain =  $this->deleteJson($uri,$data)->assertStatus($status);
                 //echo $chain->baseResponse;
                 break;
-
-
-
         }
             if (@$testData['test_structure'] == true) $chain->assertJsonStructure($structure);
             if (@$testData['test_fragment'] == true) $chain->assertJsonFragment($fragment);
             if (@$testData['test_json'] == true) $chain->assertJson($json);
+
+             return $chain;
     }
 
 

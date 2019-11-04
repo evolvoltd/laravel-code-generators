@@ -13,7 +13,7 @@ class AutoGenerateTest extends Command
      *
      * @var string
      */
-    protected $signature = 'generate:test {table?}';
+    protected $signature = 'generate:test {table?} {--old-version}';
 
     /**
      * The console command description.
@@ -96,7 +96,10 @@ class AutoGenerateTest extends Command
         }
 
         //generate test
-        $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyTest.php.tpl');
+        $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyNewTest.php.tpl');
+        if($this->option('old-version')) {
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyTest.php.tpl');
+        } 
         $file_contents = str_replace("testClass",$testName . 'Test', $file_contents);
         $file_contents = str_replace("/*table*/", $table, $file_contents);
 

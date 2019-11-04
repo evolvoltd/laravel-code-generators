@@ -23,7 +23,8 @@ class DummyController extends Controller
         return  $dummiesQuery;
     }
 
-    public function show(Dummy dummyItem){
+    public function show(Dummy dummyItem)
+    {
         //$this->authorize('view', dummyItem);
         return dummyItem;
     }

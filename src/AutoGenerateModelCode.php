@@ -16,7 +16,7 @@ class AutoGenerateModelCode extends Command
      *
      * @var string
      */
-    protected $signature = 'scaffold {database_table} {--only-ng} {--no-tr} {--no-t}';
+    protected $signature = 'scaffold {database_table} {--only-ng} {--only-vue} {--tr} {--no-t}';
 
     /**
      * The console command description.
@@ -46,30 +46,85 @@ class AutoGenerateModelCode extends Command
         $table_headers = [];
         $table_columns = [];
         $angular_model_attributes = [];
+
+        $vue_form_fields = [];
+        $vue_table_headers = '';
+        $vue_table_columns = [];
+        $vue_table_row_details = [];
+        $vue_first_form_field = '';
+        $vue_form_data_attributes = '';
+        $vue_form_imports = '';
+        $vue_form_components = '';
+        $is_vue_autocomplete_imported = false;
+        $vue_translations = '';
+
         $form_fields = [];
+        $column_index = 0;
         $singular_table_name = (substr($table, strlen($table) - 4, 3) == 'ies') ? (substr($table, 0, -3) . 'y') : (substr($table, 0, -1));
+
+        if (substr($table, -1) == 's')
+            $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
+        else
+            $model_name = str_replace('_', '', ucwords($table, '_'));
+
         foreach ($columns as $value) {
-            if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'])) {
+            if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by'])) {
                 $fillable_columns[] = $value->Field;
 
                 $validation_rules[] = '"' . $value->Field . '" => "required|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type) . '"';
                 $angular_model_attributes[] = $value->Field . ': ' . $this->convertDatabaseColumnTypeToAngularType($value->Type) . ';';
                 $table_headers[] = '<th>' . ucfirst($value->Field) . '</th>';
                 $table_columns[] = '<td>{{' . $singular_table_name . '.' . $value->Field . '}}</td>';
-                $form_fields[] =
-                    '<div class="form-group">' . PHP_EOL .
-                    '<label>' . ucfirst($value->Field) . '</label>' . PHP_EOL .
-                    '<input type="text" class="form-control" [(ngModel)]="' . $singular_table_name . '.' . $value->Field . '" placeholder="' . ucfirst($value->Field) . '">' . PHP_EOL .
-                    '</div>';
+
+                if (strpos($value->Field, '_id') !== false) {
+                    if (!$is_vue_autocomplete_imported) {
+                        $vue_form_imports = $vue_form_imports .
+                            'import Autocomplete from \'./Autocomplete\'' . PHP_EOL;
+                        $vue_form_components = $vue_form_components .
+                            'Autocomplete,' . PHP_EOL;
+                    }
+
+                    $object_field = str_replace('_id', '', $value->Field);
+                    $object_field = $this->toCamelCase($object_field);
+                    $vue_form_imports = $vue_form_imports .
+                        'import { ' . $object_field . 'Service } from \'../services/' . $object_field . '-service\';' . PHP_EOL;
+                    $vue_form_data_attributes = $vue_form_data_attributes .
+                        $object_field . 'SearchFunction: ' . $object_field . 'Service.search,' . PHP_EOL;
+
+                    $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
+                    $is_vue_autocomplete_imported = true;
+                    $vue_translations = $vue_translations . '"' . $object_field . '": "",' . PHP_EOL;
+                } else if ($value->Type === 'date') {
+                    $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
+                    $vue_form_data_attributes = $vue_form_data_attributes . $date_picker_attribute . ': false,' . PHP_EOL;
+                    $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
+                    $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
+                } else if ($value->Type === 'tinyint(1)') {
+                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name, $value->Null);
+                    $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
+                } else {
+                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name, $value->Null);
+                    $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
+                }
+
+                if ($column_index === 0) {
+                    $vue_first_form_field = $value->Field;
+                    $vue_table_headers = $vue_table_headers . '{ text: this.$t(\'' . $value->Field . '\') },' . PHP_EOL;
+                } else {
+                    $vue_table_headers = $vue_table_headers . '{ text: this.$t(\'' . $value->Field . '\'), hidden: \'xsOnly\' },' . PHP_EOL;
+                }
+                $vue_table_columns[] = $this->getVueTableColumn($value->Field, $column_index, $value->Type);
+                $vue_table_row_details[] = $this->getVueRowDetail($value->Field, $column_index, $value->Type);
+
+                $form_fields[] = $this->getAngularFormField($value->Field, $singular_table_name);
+
+                $column_index++;
             }
 
-            if ($value->Type == 'tinyint(1)')
+            if ($value->Type == 'tinyint(1)') {
                 $boolean_columns[] = $value->Field;
+            }
         }
-        if (substr($table, -1) == 's')
-            $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
-        else
-            $model_name = str_replace('_', '', ucwords($table, '_'));
 
         if ($this->option('only-ng')) {
             $dir = app_path('Console/Commands/Output/Angular/' . $table . '/');
@@ -134,6 +189,66 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("dummy", $singular_table_name, $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/' . $table . '/app-routing.module.ts'), $file_contents);
 
+        } else if ($this->option('only-vue')) {
+            $table_in_kebab_case = $this->toKebabCase($table);
+            $table_in_pascal_case = $this->toPascalCase($table);
+
+            $dir = app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/');
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
+
+            $model_in_camel_case = $this->toCamelCase($singular_table_name);
+            $model_in_kebab_case = $this->toKebabCase($singular_table_name);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
+            $file_contents = str_replace("dummysc", $singular_table_name, $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            $file_contents = str_replace("VUE_FORM_FIELDS", implode(PHP_EOL, $vue_form_fields), $file_contents);
+            $file_contents = str_replace("VUE_FORM_DATA_ATTRIBUTES", $vue_form_data_attributes, $file_contents);
+            $file_contents = str_replace("VUE_FORM_IMPORTS", $vue_form_imports, $file_contents);
+            $file_contents = str_replace("VUE_FORM_COMPONENTS", $vue_form_components, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Form.vue'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.spec.js');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            $file_contents = str_replace("VUE_FORM_FIELD_NAME", $vue_first_form_field, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Form.spec.js'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.vue');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            $file_contents = str_replace("VUE_TABLE_HEADERS", $vue_table_headers, $file_contents);
+            $file_contents = str_replace("VUE_TABLE_COLUMNS", implode(PHP_EOL, $vue_table_columns), $file_contents);
+            $file_contents = str_replace("VUE_TABLE_ROW_DETAILS", implode(PHP_EOL, $vue_table_row_details), $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Table.vue'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.spec.js');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Table.spec.js'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/Dummys.vue');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $table_in_pascal_case . '.vue'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/dummy-service.js');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_in_kebab_case . '-service.js'), $file_contents);
+
+            $vue_translations = $vue_translations .
+                '"new_' . $singular_table_name . '": "",' . PHP_EOL .
+                '"edit_' . $singular_table_name . '": ""';
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/translations.json');
+            $file_contents = str_replace("VUE_TRANSLATIONS", $vue_translations, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/translations.json'), $file_contents);
 
         } else {
             //GENERATE BACK-END CODE START
@@ -164,7 +279,7 @@ class AutoGenerateModelCode extends Command
 
                             $singular_foreign_table_name = (substr($foreign_table, strlen($foreign_table) - 4, 3) == 'ies') ? (substr($foreign_table, 0, -3) . 'y') : (substr($foreign_table, 0, -1));
 
-                            
+
                             if (substr($foreign_table, -1) == 's') {
                                 $this->info($singular_foreign_table_name);
                                 $foreign_model_name = str_replace('_', '', ucwords($singular_foreign_table_name, '_'));
@@ -256,15 +371,16 @@ class AutoGenerateModelCode extends Command
                     'table' => $table
                 ]
             );
-            if (!$this->option('no-tr')) {
-                Artisan::call('generate:test-response',
-                    [
-                        'path/test_name' => $model_name . '/' . $model_name . 'Test'
-                    ]
-                );
-            }
+//            if ($this->option('tr')) {
+//                Artisan::call('generate:test-response',
+//                    [
+//                        'path/test_name' => $model_name . '/' . $model_name . 'Test'
+//                    ]
+//                );
+//            }
+            $this->info("Tests created!");
         }
-        $this->info("Tests created!");
+        
 
 
         // }
@@ -314,5 +430,187 @@ class AutoGenerateModelCode extends Command
         if (strstr($column_type, 'timestamp') != false)
             return "date";
         return "";
+    }
+
+    private function getVueTextField(string $field, string $singular_table_name, string $is_null): string
+    {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+
+        $result =
+            '<v-flex xs12 sm6>' . PHP_EOL .
+            '<v-text-field' . PHP_EOL .
+            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
+
+        if ($is_null === 'NO') {
+            $result = $result . ':rules="[required]"' . PHP_EOL;
+        } else {
+            $result = $result . ':rules="[]"' . PHP_EOL;
+        }
+
+        $result = $result .
+            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
+            'name="' . $field . '"' . PHP_EOL .
+            '@blur="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
+            '/>' . PHP_EOL .
+            '</v-flex>' . PHP_EOL;
+
+        return $result;
+    }
+
+    private function getVueAutocompleteField(string $id_field, string $object_field, string $singular_table_name): string
+    {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+        $result =
+            '<v-flex xs12 sm6>' . PHP_EOL .
+            '<Autocomplete' . PHP_EOL .
+            ':search-function="' . $object_field . 'SearchFunction"' . PHP_EOL .
+            ':item="' . $form_item_name . '.' . $object_field . '"' . PHP_EOL .
+            ':error-messages="errors.' . $id_field . '"' . PHP_EOL .
+            ':label="$t(\'' . $object_field . '\')"' . PHP_EOL .
+            'text-field="id"' . PHP_EOL .
+            'hint="Currently displays #id in the options list, change form field\'s text-field value to change it"' . PHP_EOL .
+            '@itemSelected="formMixin_setAutocompleteValue($event, \'' . $object_field . '\')"' . PHP_EOL .
+            '/>' . PHP_EOL .
+            '</v-flex>' . PHP_EOL;
+
+        return $result;
+    }
+
+    private function getVueCheckboxField(string $field, string $singular_table_name, string $is_null): string
+    {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+
+        $result =
+            '<v-flex xs12 sm6>' . PHP_EOL .
+            '<v-checkbox' . PHP_EOL .
+            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
+
+        if ($is_null === 'NO') {
+            $result = $result . ':rules="[required]"' . PHP_EOL;
+        } else {
+            $result = $result . ':rules="[]"' . PHP_EOL;
+        }
+
+        $result = $result .
+            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
+            'name="' . $field . '"' . PHP_EOL .
+            '@blur="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
+            '/>' . PHP_EOL .
+            '</v-flex>' . PHP_EOL;
+
+        return $result;
+    }
+
+    private function getVueDateField(string $field, string $date_picker_attribute, string $singular_table_name): string
+    {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+
+        return
+            '<v-flex xs12 sm6>' . PHP_EOL .
+            '<v-menu' . PHP_EOL .
+            'v-model="' . $date_picker_attribute . '"' . PHP_EOL .
+            ':close-on-content-click="false"' . PHP_EOL .
+            'min-width="290px"' . PHP_EOL .
+            'lazy' . PHP_EOL .
+            'offset-y' . PHP_EOL .
+            'full-width>' . PHP_EOL .
+            '<v-text-field' . PHP_EOL .
+            'slot="activator"' . PHP_EOL .
+            ':value="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
+            'append-icon="event"' . PHP_EOL .
+            '@blur="' . $form_item_name . '.' . $field . ' = $formatDate($event.target.value)"' . PHP_EOL .
+            '/>' . PHP_EOL .
+            '<v-date-picker' . PHP_EOL .
+            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            ':locale="$store.state.settings.locale"' . PHP_EOL .
+            'first-day-of-week="1"' . PHP_EOL .
+            'no-title' . PHP_EOL .
+            'scrollable' . PHP_EOL .
+            '@input="' . $date_picker_attribute . ' = false"' . PHP_EOL .
+            '/>' . PHP_EOL .
+            '</v-menu>' . PHP_EOL .
+            '</v-flex>' . PHP_EOL;
+    }
+
+    private function getVueRowDetail(string $field, int $column_index, string $column_type): string
+    {
+        if ($column_index === 0) {
+            return '';
+        }
+
+        $result =
+            '<v-layout' . PHP_EOL .
+            'v-if="headers[' . $column_index . '].hidden"' . PHP_EOL .
+            'class="row-detail-item"' . PHP_EOL .
+            'justify-space-between' . PHP_EOL .
+            'align-center>' . PHP_EOL .
+            '<strong>' . PHP_EOL .
+            '{{ headers[' . $column_index . '].text }}:' . PHP_EOL .
+            '</strong>' . PHP_EOL .
+            '<span class="text-xs-right">' . PHP_EOL;
+
+        if ($column_type === 'tinyint(1)') {
+            $result = $result .
+                '<v-icon>' . PHP_EOL .
+                '{{ props.item.' . $field . ' ? \'check_box\' : \'check_box_outline_blank\' }}' . PHP_EOL .
+                '</v-icon>' . PHP_EOL;
+        } else {
+            $result = $result . '{{ props.item.' . $field . ' }}' . PHP_EOL;
+        }
+        $result = $result .
+            '</span>' . PHP_EOL .
+            '</v-layout>' . PHP_EOL;
+
+        return $result;
+    }
+
+    private function getVueTableColumn(string $field, int $column_index, string $column_type): string
+    {
+        if ($column_index > 0) {
+            $result = '<td v-if="!$vuetify.breakpoint[headers[' . $column_index . '].hidden]">' . PHP_EOL;
+        } else {
+            $result = '<td>' . PHP_EOL;
+        }
+
+        if ($column_type === 'tinyint(1)') {
+            $result = $result .
+                '<v-icon>' . PHP_EOL .
+                '{{ props.item.' . $field . ' ? \'check_box\' : \'check_box_outline_blank\' }}' . PHP_EOL .
+                '</v-icon>' . PHP_EOL .
+                '</td>' . PHP_EOL;
+        } else {
+            $result = $result .
+                '{{ props.item.' . $field . ' }}' . PHP_EOL .
+                '</td>' . PHP_EOL;
+        }
+
+        return $result;
+    }
+
+    private function getAngularFormField(string $field, string $singular_table_name): string
+    {
+        return
+            '<div class="form-group">' . PHP_EOL .
+            '<label>' . ucfirst($field) . '</label>' . PHP_EOL .
+            '<input type="text" class="form-control" [(ngModel)]="' . $singular_table_name . '.' . $field . '" placeholder="' . ucfirst($field) . '">' . PHP_EOL .
+            '</div>';
+    }
+
+    private function toPascalCase(string $str): string
+    {
+        return str_replace('_', '', ucwords($str, '_'));
+    }
+
+    private function toCamelCase(string $str): string
+    {
+        return str_replace('_', '', lcfirst(ucwords($str, '_')));
+    }
+
+    private function toKebabCase(string $str): string
+    {
+        return str_replace('_', '-', strtolower($str));
     }
 }
