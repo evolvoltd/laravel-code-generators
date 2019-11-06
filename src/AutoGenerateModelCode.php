@@ -16,7 +16,7 @@ class AutoGenerateModelCode extends Command
      *
      * @var string
      */
-    protected $signature = 'scaffold {database_table} {--only-ng} {--only-vue} {--tr} {--no-t}';
+    protected $signature = 'scaffold {database_table} {--only-ng} {--only-vue} {--tr} {--no-t} {--simple-crud-test}';
 
     /**
      * The console command description.
@@ -340,6 +340,10 @@ class AutoGenerateModelCode extends Command
             $route = str_replace('_', '-', $table);
             $file_contents = file_get_contents(base_path('routes/api.php'));
             $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name . 'sController\');';
+           // file_put_contents(base_path('routes/api.php'), $file_contents);
+
+            //generate find route
+            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', \'' . $model_name . 'sController@find\');';
             file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
@@ -365,7 +369,17 @@ class AutoGenerateModelCode extends Command
         }
 
         // if ($this->confirm('Create tests for generated CRUD?')) {
-        if(!$this->option('no-t')) {
+        if($this->option('simple-crud-test')){
+            Artisan::call('simple-crud-test',
+                [
+                    'table' => $table
+                ]
+            );
+
+        }
+
+
+        if(!$this->option('no-t')  && !$this->option('simple-crud-test')) {
             Artisan::call('generate:test',
                 [
                     'table' => $table
@@ -380,7 +394,7 @@ class AutoGenerateModelCode extends Command
 //            }
             $this->info("Tests created!");
         }
-        
+
 
 
         // }

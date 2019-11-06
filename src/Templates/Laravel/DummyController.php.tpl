@@ -16,7 +16,6 @@ class DummyController extends Controller
         $this->dummyService = dummyItemService;
     }
 
-
     public function index(Request $request)
     {
         $dummiesQuery = $this->dummyService->dummiesQuery($request);
@@ -29,13 +28,11 @@ class DummyController extends Controller
         return dummyItem;
     }
 
-
     public function store(StoreOrUpdate $request)
     {
         dummyItem = $this->dummyService->createDummy($request);
         return dummyItem;
     }
-
 
     public function update(StoreOrUpdate $request, Dummy dummyItem)
     {
@@ -44,7 +41,6 @@ class DummyController extends Controller
         dummyItem = $this->dummyService->updateDummy($request,dummyItem);
         return dummyItem;
     }
-
 
     public function destroy(Dummy dummyItem)
     {
@@ -55,8 +51,8 @@ class DummyController extends Controller
 
     public function find($search)
     {
-        return (strlen($search)>2)?Dummy::where('title', 'LIKE', '%' . $search . '%')->limit(20)->get():[];
+        $dummies = $this->dummyService->find($search);
+        return  $dummies;
     }
-
 
 }

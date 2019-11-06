@@ -27,5 +27,8 @@ class DummyService
         return dummyItem;
     }
 
-
+    public function find($search)
+    {
+        return (strlen($search) > 2) ? ["data" => Dummy::where('name', 'LIKE', '%' . $search . '%')->limit(20)->get()] : [];
+    }
 }
