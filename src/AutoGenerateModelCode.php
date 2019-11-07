@@ -104,18 +104,18 @@ class AutoGenerateModelCode extends Command
                     $is_vue_datepicker_imported = true;
                     $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 } else if ($value->Type === 'tinyint(1)') {
-                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name, $value->Null);
+                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name);
                     $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 } else {
-                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name, $value->Null);
+                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name);
                     $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 }
 
                 if ($column_index === 0) {
                     $vue_first_form_field = $value->Field;
-                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\') },' . PHP_EOL . 'value: ' . $value->Field . ',' . PHP_EOL . '},' . PHP_EOL;
+                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\'),' . PHP_EOL . 'value: \'' . $value->Field . '\',' . PHP_EOL . '},' . PHP_EOL;
                 } else {
-                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\') },' . PHP_EOL . 'value: ' . $value->Field . ',' . PHP_EOL . 'hidden: \'xsOnly\',' . PHP_EOL . '},' . PHP_EOL;
+                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\'),' . PHP_EOL . 'value: \'' . $value->Field . '\',' . PHP_EOL . 'hidden: \'xsOnly\',' . PHP_EOL . '},' . PHP_EOL;
                 }
 
                 $form_fields[] = $this->getAngularFormField($value->Field, $singular_table_name);
@@ -244,13 +244,13 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_in_kebab_case . '-service.js'), $file_contents);
 
             $vue_translations = $vue_translations .
-                '"' . $singular_table_name . ': "",' . PHP_EOL .
+                '"' . $singular_table_name . '": "",' . PHP_EOL .
                 '"' . $table . '": "",' . PHP_EOL .
                 '"' . $singular_table_name . '_created": "",' . PHP_EOL .
                 '"' . $singular_table_name . '_updated": "",' . PHP_EOL .
                 '"' . $singular_table_name . '_deleted": "",' . PHP_EOL .
-                '"create_' . $singular_table_name . '": ","' . PHP_EOL .
-                '"new_' . $singular_table_name . '": ","' . PHP_EOL .
+                '"create_' . $singular_table_name . '": "",' . PHP_EOL .
+                '"new_' . $singular_table_name . '": "",' . PHP_EOL .
                 '"edit_' . $singular_table_name . '": ""';
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/translations.json');
             $file_contents = str_replace("VUE_TRANSLATIONS", $vue_translations, $file_contents);
@@ -437,28 +437,21 @@ class AutoGenerateModelCode extends Command
         return "";
     }
 
-    private function getVueTextField(string $field, string $singular_table_name, string $is_null): string
+    private function getVueTextField(string $field, string $singular_table_name): string
     {
         $form_item_name = $this->toCamelCase($singular_table_name);
 
         $result =
-            '<v-flex xs12 sm6>' . PHP_EOL .
+            '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-text-field' . PHP_EOL .
             'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
-        if ($is_null === 'NO') {
-            $result = $result . ':rules="[required]"' . PHP_EOL;
-        } else {
-            $result = $result . ':rules="[]"' . PHP_EOL;
-        }
-
         $result = $result .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
-            'name="' . $field . '"' . PHP_EOL .
             '@blur="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
-            '</v-flex>' . PHP_EOL;
+            '</v-col>' . PHP_EOL;
 
         return $result;
     }
@@ -467,8 +460,8 @@ class AutoGenerateModelCode extends Command
     {
         $form_item_name = $this->toCamelCase($singular_table_name);
         $result =
-            '<v-flex xs12 sm6>' . PHP_EOL .
-            '<Autocomplete' . PHP_EOL .
+            '<v-col cols="12" sm="6">' . PHP_EOL .
+            '<BaseAutocomplete' . PHP_EOL .
             ':search-function="' . $object_field . 'SearchFunction"' . PHP_EOL .
             ':item="' . $form_item_name . '.' . $object_field . '"' . PHP_EOL .
             ':error-messages="errors.' . $id_field . '"' . PHP_EOL .
@@ -477,33 +470,26 @@ class AutoGenerateModelCode extends Command
             'hint="Currently displays #id in the options list, change form field\'s text-field value to change it"' . PHP_EOL .
             '@itemSelected="formMixin_setAutocompleteValue($event, \'' . $object_field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
-            '</v-flex>' . PHP_EOL;
+            '</v-col>' . PHP_EOL;
 
         return $result;
     }
 
-    private function getVueCheckboxField(string $field, string $singular_table_name, string $is_null): string
+    private function getVueCheckboxField(string $field, string $singular_table_name): string
     {
         $form_item_name = $this->toCamelCase($singular_table_name);
 
         $result =
-            '<v-flex xs12 sm6>' . PHP_EOL .
+            '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-checkbox' . PHP_EOL .
             'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
-        if ($is_null === 'NO') {
-            $result = $result . ':rules="[required]"' . PHP_EOL;
-        } else {
-            $result = $result . ':rules="[]"' . PHP_EOL;
-        }
-
         $result = $result .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
-            'name="' . $field . '"' . PHP_EOL .
             '@blur="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
-            '</v-flex>' . PHP_EOL;
+            '</v-col>' . PHP_EOL;
 
         return $result;
     }
@@ -513,12 +499,14 @@ class AutoGenerateModelCode extends Command
         $form_item_name = $this->toCamelCase($singular_table_name);
 
         return
+            '<v-col cols="12" sm="6">' . PHP_EOL .
             '<BaseDatepickerInput>' . PHP_EOL .
             'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
             '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
             '</BaseDatepickerInput>' . PHP_EOL;
+            '</v-col>' . PHP_EOL;
     }
 
     private function getAngularFormField(string $field, string $singular_table_name): string

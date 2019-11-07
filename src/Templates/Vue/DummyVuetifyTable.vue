@@ -2,10 +2,11 @@
   <BaseTableLoader v-if="loading"/>
 
   <v-data-table
+    v-else
     :footer-props="{
       'items-per-page-options': [pagination.rowsPerPage],
     }"
-    :headers="headers"
+    :headers="tableMixin_displayedHeaders"
     :items="rows"
     :mobile-breakpoint="0"
     :page="pagination.page"
@@ -38,11 +39,11 @@
 </template>
 
 <script>
-import tableMixin from '../mixins/table-mixin';
 import BaseActionMenu from './base/BaseActionMenu';
 import BaseTableHeader from './base/BaseTableHeader';
 import BaseExpandedTableRow from './base/BaseExpandedTableRow';
 import BaseTableLoader from './base/BaseTableLoader';
+import tableMixin from '../mixins/table-mixin';
 
 export default {
   name: 'DummyTable',
