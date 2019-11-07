@@ -1,115 +1,92 @@
 <template>
-  <div class="full-width">
-    <h1 class="pa-3 display-1">
-      {{ $t('dummys') }}
-    </h1>
-
+  <div class="page-wrapper">
     <DummyTable
-      v-if="!isDataLoading"
       :rows="dummyArray"
       :pagination="dummyPagination"
-      @rowClick="openDummyInForm"
-      @delete="deleteDummy"
-      @changePage="getPaginatedDummys"
+      :loading="isDataLoading"
+      @change-page="getPaginatedDummys"
+      @delete="crudMixin_delete(onDelete, 'dummy', $event)"
+      @edit="crudMixin_openForm('dummy', $event)"
     />
 
     <v-dialog
-      v-if="isDummyFormOpen"
       v-model="isDummyFormOpen"
       :fullscreen="$vuetify.breakpoint.xsOnly"
-      max-width="800px"
-      class="modal-container"
+      transition="slide-y-reverse-transition"
+      max-width="800"
       persistent
-      scrollable>
+      scrollable
+    >
       <DummyForm
+        :dialog="isDiscountFormOpen"
         :dummykc="dummyFormItem"
-        :errors="dummyFormErrors"
-        :is-saving-disabled="isRequestPending"
-        @save="onDummyFormSave"
-        @cancel="onDummyFormCancel"
+        @create="crudMixin_created('dummy', $event)"
+        @update="crudMixin_updated('dummy', $event)"
+        @cancel="isDiscountFormOpen = false"
       />
     </v-dialog>
 
     <v-scale-transition>
       <v-btn
-        v-if="!isDataLoading"
+        v-if="!isDataLoading && $vuetify.breakpoint.xsOnly"
         color="primary"
         bottom
         dark
         fab
         fixed
         right
-        @click.stop="onPrimaryButtonClick">
-        <v-icon>add</v-icon>
+        @click.stop="crudMixin_openForm('dummy')"
+      >
+        <v-icon>mdi-plus</v-icon>
       </v-btn>
     </v-scale-transition>
   </div>
 </template>
 
 <script>
-  import DummyForm from '../components/DummyForm';
-  import DummyTable from '../components/DummyTable';
-  import crudMixin from '../mixins/crud-mixin';
-  import { dummyService } from '../api/dummykc-service';
+import DummyForm from '../components/DummyForm';
+import DummyTable from '../components/DummyTable';
+import crudMixin from '../mixins/crud-mixin';
+import { dummyService } from '../api/dummykc-service';
 
-  export default {
-    name: 'DummysPage',
+export default {
+  name: 'Dummys',
 
-    components: {
-      DummyForm,
-      DummyTable,
+  components: {
+    DummyForm,
+    DummyTable,
+  },
+
+  mixins: [crudMixin],
+
+  data() {
+    return {
+      dummyArray: [],
+      dummyPagination: {
+        page: 1,
+      },
+      dummyFormItem: {},
+      dummyFilterParams: '',
+      isDummyFormOpen: false,
+
+      isDataLoading: true,
+      onDelete: dummyService.delete,
+    };
+  },
+
+  created() {
+    this.getPaginatedDummys(1);
+  },
+
+  methods: {
+    getPaginatedDummys(pageNo) {
+      this.crudMixin_getPage(
+        dummyService.getPage,
+        dummyService.model,
+        pageNo,
+        this.dummyFilterParams
+      );
     },
-
-    mixins: [crudMixin],
-
-    data() {
-      return {
-        dummyArray: [],
-        dummyPagination: {
-          page: 1,
-        },
-        dummyFormItem: {},
-        dummyFormErrors: {},
-        dummyFilterParams: '',
-        isDummyFormOpen: false,
-
-        isDataLoading: true,
-        isRequestPending: false,
-      };
-    },
-
-    created() {
-      this.getPaginatedDummys(1);
-    },
-
-    methods: {
-      getPaginatedDummys(pageNo) {
-        this.crudMixin_getPage(dummyService.getPage, dummyService.model, pageNo, this.dummyFilterParams);
-      },
-
-      onPrimaryButtonClick() {
-        this.dummyFormItem = {};
-        this.dummyFormErrors = {};
-        this.isDummyFormOpen = true;
-      },
-
-      openDummyInForm(dummy) {
-        this.dummyFormItem = JSON.parse(JSON.stringify(dummy));
-        this.dummyFormErrors = {};
-        this.isDummyFormOpen = true;
-      },
-
-      async onDummyFormSave(dummy) {
-        await this.crudMixin_createOrUpdate(dummyService, dummy);
-      },
-
-      onDummyFormCancel() {
-        this.isDummyFormOpen = false;
-      },
-
-      deleteDummy(dummy) {
-        this.crudMixin_delete(dummyService.delete, dummyService.model, dummy);
-      },
-    },
-  };
+  },
+};
 </script>

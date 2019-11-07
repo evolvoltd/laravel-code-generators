@@ -49,8 +49,6 @@ class AutoGenerateModelCode extends Command
 
         $vue_form_fields = [];
         $vue_table_headers = '';
-        $vue_table_columns = [];
-        $vue_table_row_details = [];
         $vue_first_form_field = '';
         $vue_form_data_attributes = '';
         $vue_form_imports = '';
@@ -87,7 +85,7 @@ class AutoGenerateModelCode extends Command
                     $object_field = str_replace('_id', '', $value->Field);
                     $object_field = $this->toCamelCase($object_field);
                     $vue_form_imports = $vue_form_imports .
-                        'import { ' . $object_field . 'Service } from \'../services/' . $object_field . '-service\';' . PHP_EOL;
+                        'import { ' . $object_field . 'Service } from \'../api/' . $object_field . '-service\';' . PHP_EOL;
                     $vue_form_data_attributes = $vue_form_data_attributes .
                         $object_field . 'SearchFunction: ' . $object_field . 'Service.search,' . PHP_EOL;
 
@@ -109,12 +107,10 @@ class AutoGenerateModelCode extends Command
 
                 if ($column_index === 0) {
                     $vue_first_form_field = $value->Field;
-                    $vue_table_headers = $vue_table_headers . '{ text: this.$t(\'' . $value->Field . '\') },' . PHP_EOL;
+                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\') },' . PHP_EOL . 'value: ' . $value->Field . ',' . PHP_EOL . '},' . PHP_EOL;
                 } else {
-                    $vue_table_headers = $vue_table_headers . '{ text: this.$t(\'' . $value->Field . '\'), hidden: \'xsOnly\' },' . PHP_EOL;
+                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\') },' . PHP_EOL . 'value: ' . $value->Field . ',' . PHP_EOL . 'hidden: \'xsOnly\',' . PHP_EOL . '},' . PHP_EOL;
                 }
-                $vue_table_columns[] = $this->getVueTableColumn($value->Field, $column_index, $value->Type);
-                $vue_table_row_details[] = $this->getVueRowDetail($value->Field, $column_index, $value->Type);
 
                 $form_fields[] = $this->getAngularFormField($value->Field, $singular_table_name);
 
@@ -222,8 +218,6 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
             $file_contents = str_replace("VUE_TABLE_HEADERS", $vue_table_headers, $file_contents);
-            $file_contents = str_replace("VUE_TABLE_COLUMNS", implode(PHP_EOL, $vue_table_columns), $file_contents);
-            $file_contents = str_replace("VUE_TABLE_ROW_DETAILS", implode(PHP_EOL, $vue_table_row_details), $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Table.vue'), $file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.spec.js');
@@ -244,7 +238,13 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_in_kebab_case . '-service.js'), $file_contents);
 
             $vue_translations = $vue_translations .
-                '"new_' . $singular_table_name . '": "",' . PHP_EOL .
+                '"' . $singular_table_name . ': "",' . PHP_EOL .
+                '"' . $table . '": "",' . PHP_EOL .
+                '"' . $singular_table_name . '_created": "",' . PHP_EOL .
+                '"' . $singular_table_name . '_updated": "",' . PHP_EOL .
+                '"' . $singular_table_name . '_deleted": "",' . PHP_EOL .
+                '"create_' . $singular_table_name . '": ","' . PHP_EOL .
+                '"new_' . $singular_table_name . '": ","' . PHP_EOL .
                 '"edit_' . $singular_table_name . '": ""';
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/translations.json');
             $file_contents = str_replace("VUE_TRANSLATIONS", $vue_translations, $file_contents);
@@ -532,61 +532,6 @@ class AutoGenerateModelCode extends Command
             '/>' . PHP_EOL .
             '</v-menu>' . PHP_EOL .
             '</v-flex>' . PHP_EOL;
-    }
-
-    private function getVueRowDetail(string $field, int $column_index, string $column_type): string
-    {
-        if ($column_index === 0) {
-            return '';
-        }
-
-        $result =
-            '<v-layout' . PHP_EOL .
-            'v-if="headers[' . $column_index . '].hidden"' . PHP_EOL .
-            'class="row-detail-item"' . PHP_EOL .
-            'justify-space-between' . PHP_EOL .
-            'align-center>' . PHP_EOL .
-            '<strong>' . PHP_EOL .
-            '{{ headers[' . $column_index . '].text }}:' . PHP_EOL .
-            '</strong>' . PHP_EOL .
-            '<span class="text-xs-right">' . PHP_EOL;
-
-        if ($column_type === 'tinyint(1)') {
-            $result = $result .
-                '<v-icon>' . PHP_EOL .
-                '{{ props.item.' . $field . ' ? \'check_box\' : \'check_box_outline_blank\' }}' . PHP_EOL .
-                '</v-icon>' . PHP_EOL;
-        } else {
-            $result = $result . '{{ props.item.' . $field . ' }}' . PHP_EOL;
-        }
-        $result = $result .
-            '</span>' . PHP_EOL .
-            '</v-layout>' . PHP_EOL;
-
-        return $result;
-    }
-
-    private function getVueTableColumn(string $field, int $column_index, string $column_type): string
-    {
-        if ($column_index > 0) {
-            $result = '<td v-if="!$vuetify.breakpoint[headers[' . $column_index . '].hidden]">' . PHP_EOL;
-        } else {
-            $result = '<td>' . PHP_EOL;
-        }
-
-        if ($column_type === 'tinyint(1)') {
-            $result = $result .
-                '<v-icon>' . PHP_EOL .
-                '{{ props.item.' . $field . ' ? \'check_box\' : \'check_box_outline_blank\' }}' . PHP_EOL .
-                '</v-icon>' . PHP_EOL .
-                '</td>' . PHP_EOL;
-        } else {
-            $result = $result .
-                '{{ props.item.' . $field . ' }}' . PHP_EOL .
-                '</td>' . PHP_EOL;
-        }
-
-        return $result;
     }
 
     private function getAngularFormField(string $field, string $singular_table_name): string
