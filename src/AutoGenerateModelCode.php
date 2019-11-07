@@ -54,6 +54,7 @@ class AutoGenerateModelCode extends Command
         $vue_form_imports = '';
         $vue_form_components = '';
         $is_vue_autocomplete_imported = false;
+        $is_vue_datepicker_imported = false;
         $vue_translations = '';
 
         $form_fields = [];
@@ -77,9 +78,9 @@ class AutoGenerateModelCode extends Command
                 if (strpos($value->Field, '_id') !== false) {
                     if (!$is_vue_autocomplete_imported) {
                         $vue_form_imports = $vue_form_imports .
-                            'import Autocomplete from \'./Autocomplete\'' . PHP_EOL;
+                            'import BaseAutocomplete from \'./base/BaseAutocomplete\'' . PHP_EOL;
                         $vue_form_components = $vue_form_components .
-                            'Autocomplete,' . PHP_EOL;
+                            'BaseAutocomplete,' . PHP_EOL;
                     }
 
                     $object_field = str_replace('_id', '', $value->Field);
@@ -93,9 +94,14 @@ class AutoGenerateModelCode extends Command
                     $is_vue_autocomplete_imported = true;
                     $vue_translations = $vue_translations . '"' . $object_field . '": "",' . PHP_EOL;
                 } else if ($value->Type === 'date') {
-                    $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
-                    $vue_form_data_attributes = $vue_form_data_attributes . $date_picker_attribute . ': false,' . PHP_EOL;
-                    $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
+                    if (!$is_vue_datepicker_imported) {
+                        $vue_form_imports = $vue_form_imports .
+                            'import BaseDatepicker from \'./base/BaseDatepicker\'' . PHP_EOL;
+                        $vue_form_components = $vue_form_components .
+                            'BaseDatepicker,' . PHP_EOL;
+                    }
+                    $vue_form_fields[] = $this->getVueDateField($value->Field, $singular_table_name);
+                    $is_vue_datepicker_imported = true;
                     $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 } else if ($value->Type === 'tinyint(1)') {
                     $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name, $value->Null);
@@ -502,36 +508,17 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueDateField(string $field, string $date_picker_attribute, string $singular_table_name): string
+    private function getVueDateField(string $field, string $singular_table_name): string
     {
         $form_item_name = $this->toCamelCase($singular_table_name);
 
         return
-            '<v-flex xs12 sm6>' . PHP_EOL .
-            '<v-menu' . PHP_EOL .
-            'v-model="' . $date_picker_attribute . '"' . PHP_EOL .
-            ':close-on-content-click="false"' . PHP_EOL .
-            'min-width="290px"' . PHP_EOL .
-            'lazy' . PHP_EOL .
-            'offset-y' . PHP_EOL .
-            'full-width>' . PHP_EOL .
-            '<v-text-field' . PHP_EOL .
-            'slot="activator"' . PHP_EOL .
-            ':value="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
-            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
-            'append-icon="event"' . PHP_EOL .
-            '@blur="' . $form_item_name . '.' . $field . ' = $formatDate($event.target.value)"' . PHP_EOL .
-            '/>' . PHP_EOL .
-            '<v-date-picker' . PHP_EOL .
+            '<BaseDatepickerInput>' . PHP_EOL .
             'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
-            ':locale="$store.state.settings.locale"' . PHP_EOL .
-            'first-day-of-week="1"' . PHP_EOL .
-            'no-title' . PHP_EOL .
-            'scrollable' . PHP_EOL .
-            '@input="' . $date_picker_attribute . ' = false"' . PHP_EOL .
-            '/>' . PHP_EOL .
-            '</v-menu>' . PHP_EOL .
-            '</v-flex>' . PHP_EOL;
+            ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL .
+            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
+            '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
+            '</BaseDatepickerInput>' . PHP_EOL;
     }
 
     private function getAngularFormField(string $field, string $singular_table_name): string
