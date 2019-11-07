@@ -1,15 +1,21 @@
-import axios from 'axios';
+import http from './http';
 
 const endpoint = 'api/dummys';
 
-export const dummyService = {
+const dummyService = {
   model: 'dummy',
 
-  getPage: (page, query) => axios.get(`${endpoint}?page=${page}&${query}`),
+  getPage: (page, query) => http.get(`${endpoint}?page=${page}&${query}`),
 
-  create: dummy => axios.post(`${endpoint}`, dummy),
+  getAll: query => http.get(`${endpoint}?${query}`),
 
-  update: dummy => axios.put(`${endpoint}/${dummy.id}`, dummy),
+  search: query => http.get(`${endpoint}/find/${query}`),
 
-  delete: dummy => axios.delete(`${endpoint}/${dummy.id}`),
+  create: dummy => http.post(`${endpoint}`, dummy),
+
+  update: dummy => http.put(`${endpoint}/${dummy.id}`, dummy),
+
+  delete: dummy => http.delete(`${endpoint}/${dummy.id}`),
 };
+
+export default dummyService;

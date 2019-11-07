@@ -49,13 +49,12 @@ class AutoGenerateModelCode extends Command
 
         $vue_form_fields = [];
         $vue_table_headers = '';
-        $vue_table_columns = [];
-        $vue_table_row_details = [];
         $vue_first_form_field = '';
         $vue_form_data_attributes = '';
         $vue_form_imports = '';
         $vue_form_components = '';
         $is_vue_autocomplete_imported = false;
+        $is_vue_datepicker_imported = false;
         $vue_translations = '';
 
         $form_fields = [];
@@ -79,15 +78,15 @@ class AutoGenerateModelCode extends Command
                 if (strpos($value->Field, '_id') !== false) {
                     if (!$is_vue_autocomplete_imported) {
                         $vue_form_imports = $vue_form_imports .
-                            'import Autocomplete from \'./Autocomplete\'' . PHP_EOL;
+                            'import BaseAutocomplete from \'./base/BaseAutocomplete\'' . PHP_EOL;
                         $vue_form_components = $vue_form_components .
-                            'Autocomplete,' . PHP_EOL;
+                            'BaseAutocomplete,' . PHP_EOL;
                     }
 
                     $object_field = str_replace('_id', '', $value->Field);
                     $object_field = $this->toCamelCase($object_field);
                     $vue_form_imports = $vue_form_imports .
-                        'import { ' . $object_field . 'Service } from \'../services/' . $object_field . '-service\';' . PHP_EOL;
+                        'import { ' . $object_field . 'Service } from \'../api/' . $object_field . '-service\';' . PHP_EOL;
                     $vue_form_data_attributes = $vue_form_data_attributes .
                         $object_field . 'SearchFunction: ' . $object_field . 'Service.search,' . PHP_EOL;
 
@@ -95,26 +94,29 @@ class AutoGenerateModelCode extends Command
                     $is_vue_autocomplete_imported = true;
                     $vue_translations = $vue_translations . '"' . $object_field . '": "",' . PHP_EOL;
                 } else if ($value->Type === 'date') {
-                    $date_picker_attribute = 'is' . $this->toPascalCase($value->Field) . 'PickerOpen';
-                    $vue_form_data_attributes = $vue_form_data_attributes . $date_picker_attribute . ': false,' . PHP_EOL;
-                    $vue_form_fields[] = $this->getVueDateField($value->Field, $date_picker_attribute, $singular_table_name);
+                    if (!$is_vue_datepicker_imported) {
+                        $vue_form_imports = $vue_form_imports .
+                            'import BaseDatepicker from \'./base/BaseDatepicker\'' . PHP_EOL;
+                        $vue_form_components = $vue_form_components .
+                            'BaseDatepicker,' . PHP_EOL;
+                    }
+                    $vue_form_fields[] = $this->getVueDateField($value->Field, $singular_table_name);
+                    $is_vue_datepicker_imported = true;
                     $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 } else if ($value->Type === 'tinyint(1)') {
-                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name, $value->Null);
+                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name);
                     $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 } else {
-                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name, $value->Null);
+                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name);
                     $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 }
 
                 if ($column_index === 0) {
                     $vue_first_form_field = $value->Field;
-                    $vue_table_headers = $vue_table_headers . '{ text: this.$t(\'' . $value->Field . '\') },' . PHP_EOL;
+                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\'),' . PHP_EOL . 'value: \'' . $value->Field . '\',' . PHP_EOL . '},' . PHP_EOL;
                 } else {
-                    $vue_table_headers = $vue_table_headers . '{ text: this.$t(\'' . $value->Field . '\'), hidden: \'xsOnly\' },' . PHP_EOL;
+                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\'),' . PHP_EOL . 'value: \'' . $value->Field . '\',' . PHP_EOL . 'hidden: \'xsOnly\',' . PHP_EOL . '},' . PHP_EOL;
                 }
-                $vue_table_columns[] = $this->getVueTableColumn($value->Field, $column_index, $value->Type);
-                $vue_table_row_details[] = $this->getVueRowDetail($value->Field, $column_index, $value->Type);
 
                 $form_fields[] = $this->getAngularFormField($value->Field, $singular_table_name);
 
@@ -222,8 +224,6 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
             $file_contents = str_replace("VUE_TABLE_HEADERS", $vue_table_headers, $file_contents);
-            $file_contents = str_replace("VUE_TABLE_COLUMNS", implode(PHP_EOL, $vue_table_columns), $file_contents);
-            $file_contents = str_replace("VUE_TABLE_ROW_DETAILS", implode(PHP_EOL, $vue_table_row_details), $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Table.vue'), $file_contents);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.spec.js');
@@ -244,6 +244,12 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_in_kebab_case . '-service.js'), $file_contents);
 
             $vue_translations = $vue_translations .
+                '"' . $singular_table_name . '": "",' . PHP_EOL .
+                '"' . $table . '": "",' . PHP_EOL .
+                '"' . $singular_table_name . '_created": "",' . PHP_EOL .
+                '"' . $singular_table_name . '_updated": "",' . PHP_EOL .
+                '"' . $singular_table_name . '_deleted": "",' . PHP_EOL .
+                '"create_' . $singular_table_name . '": "",' . PHP_EOL .
                 '"new_' . $singular_table_name . '": "",' . PHP_EOL .
                 '"edit_' . $singular_table_name . '": ""';
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/translations.json');
@@ -446,28 +452,21 @@ class AutoGenerateModelCode extends Command
         return "";
     }
 
-    private function getVueTextField(string $field, string $singular_table_name, string $is_null): string
+    private function getVueTextField(string $field, string $singular_table_name): string
     {
         $form_item_name = $this->toCamelCase($singular_table_name);
 
         $result =
-            '<v-flex xs12 sm6>' . PHP_EOL .
+            '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-text-field' . PHP_EOL .
             'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
-        if ($is_null === 'NO') {
-            $result = $result . ':rules="[required]"' . PHP_EOL;
-        } else {
-            $result = $result . ':rules="[]"' . PHP_EOL;
-        }
-
         $result = $result .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
-            'name="' . $field . '"' . PHP_EOL .
             '@blur="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
-            '</v-flex>' . PHP_EOL;
+            '</v-col>' . PHP_EOL;
 
         return $result;
     }
@@ -476,8 +475,8 @@ class AutoGenerateModelCode extends Command
     {
         $form_item_name = $this->toCamelCase($singular_table_name);
         $result =
-            '<v-flex xs12 sm6>' . PHP_EOL .
-            '<Autocomplete' . PHP_EOL .
+            '<v-col cols="12" sm="6">' . PHP_EOL .
+            '<BaseAutocomplete' . PHP_EOL .
             ':search-function="' . $object_field . 'SearchFunction"' . PHP_EOL .
             ':item="' . $form_item_name . '.' . $object_field . '"' . PHP_EOL .
             ':error-messages="errors.' . $id_field . '"' . PHP_EOL .
@@ -486,122 +485,43 @@ class AutoGenerateModelCode extends Command
             'hint="Currently displays #id in the options list, change form field\'s text-field value to change it"' . PHP_EOL .
             '@itemSelected="formMixin_setAutocompleteValue($event, \'' . $object_field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
-            '</v-flex>' . PHP_EOL;
+            '</v-col>' . PHP_EOL;
 
         return $result;
     }
 
-    private function getVueCheckboxField(string $field, string $singular_table_name, string $is_null): string
+    private function getVueCheckboxField(string $field, string $singular_table_name): string
     {
         $form_item_name = $this->toCamelCase($singular_table_name);
 
         $result =
-            '<v-flex xs12 sm6>' . PHP_EOL .
+            '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-checkbox' . PHP_EOL .
             'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
-        if ($is_null === 'NO') {
-            $result = $result . ':rules="[required]"' . PHP_EOL;
-        } else {
-            $result = $result . ':rules="[]"' . PHP_EOL;
-        }
-
         $result = $result .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
-            'name="' . $field . '"' . PHP_EOL .
             '@blur="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
-            '</v-flex>' . PHP_EOL;
+            '</v-col>' . PHP_EOL;
 
         return $result;
     }
 
-    private function getVueDateField(string $field, string $date_picker_attribute, string $singular_table_name): string
+    private function getVueDateField(string $field, string $singular_table_name): string
     {
         $form_item_name = $this->toCamelCase($singular_table_name);
 
         return
-            '<v-flex xs12 sm6>' . PHP_EOL .
-            '<v-menu' . PHP_EOL .
-            'v-model="' . $date_picker_attribute . '"' . PHP_EOL .
-            ':close-on-content-click="false"' . PHP_EOL .
-            'min-width="290px"' . PHP_EOL .
-            'lazy' . PHP_EOL .
-            'offset-y' . PHP_EOL .
-            'full-width>' . PHP_EOL .
-            '<v-text-field' . PHP_EOL .
-            'slot="activator"' . PHP_EOL .
-            ':value="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
-            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
-            'append-icon="event"' . PHP_EOL .
-            '@blur="' . $form_item_name . '.' . $field . ' = $formatDate($event.target.value)"' . PHP_EOL .
-            '/>' . PHP_EOL .
-            '<v-date-picker' . PHP_EOL .
+            '<v-col cols="12" sm="6">' . PHP_EOL .
+            '<BaseDatepickerInput>' . PHP_EOL .
             'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
-            ':locale="$store.state.settings.locale"' . PHP_EOL .
-            'first-day-of-week="1"' . PHP_EOL .
-            'no-title' . PHP_EOL .
-            'scrollable' . PHP_EOL .
-            '@input="' . $date_picker_attribute . ' = false"' . PHP_EOL .
-            '/>' . PHP_EOL .
-            '</v-menu>' . PHP_EOL .
-            '</v-flex>' . PHP_EOL;
-    }
-
-    private function getVueRowDetail(string $field, int $column_index, string $column_type): string
-    {
-        if ($column_index === 0) {
-            return '';
-        }
-
-        $result =
-            '<v-layout' . PHP_EOL .
-            'v-if="headers[' . $column_index . '].hidden"' . PHP_EOL .
-            'class="row-detail-item"' . PHP_EOL .
-            'justify-space-between' . PHP_EOL .
-            'align-center>' . PHP_EOL .
-            '<strong>' . PHP_EOL .
-            '{{ headers[' . $column_index . '].text }}:' . PHP_EOL .
-            '</strong>' . PHP_EOL .
-            '<span class="text-xs-right">' . PHP_EOL;
-
-        if ($column_type === 'tinyint(1)') {
-            $result = $result .
-                '<v-icon>' . PHP_EOL .
-                '{{ props.item.' . $field . ' ? \'check_box\' : \'check_box_outline_blank\' }}' . PHP_EOL .
-                '</v-icon>' . PHP_EOL;
-        } else {
-            $result = $result . '{{ props.item.' . $field . ' }}' . PHP_EOL;
-        }
-        $result = $result .
-            '</span>' . PHP_EOL .
-            '</v-layout>' . PHP_EOL;
-
-        return $result;
-    }
-
-    private function getVueTableColumn(string $field, int $column_index, string $column_type): string
-    {
-        if ($column_index > 0) {
-            $result = '<td v-if="!$vuetify.breakpoint[headers[' . $column_index . '].hidden]">' . PHP_EOL;
-        } else {
-            $result = '<td>' . PHP_EOL;
-        }
-
-        if ($column_type === 'tinyint(1)') {
-            $result = $result .
-                '<v-icon>' . PHP_EOL .
-                '{{ props.item.' . $field . ' ? \'check_box\' : \'check_box_outline_blank\' }}' . PHP_EOL .
-                '</v-icon>' . PHP_EOL .
-                '</td>' . PHP_EOL;
-        } else {
-            $result = $result .
-                '{{ props.item.' . $field . ' }}' . PHP_EOL .
-                '</td>' . PHP_EOL;
-        }
-
-        return $result;
+            ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL .
+            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
+            '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
+            '</BaseDatepickerInput>' . PHP_EOL;
+            '</v-col>' . PHP_EOL;
     }
 
     private function getAngularFormField(string $field, string $singular_table_name): string
