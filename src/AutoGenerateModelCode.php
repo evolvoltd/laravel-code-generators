@@ -192,6 +192,7 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Angular/' . $table . '/app-routing.module.ts'), $file_contents);
 
         } else if ($this->option('only-vue')) {
+            $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'value: \'actions\'),' . PHP_EOL . '},' . PHP_EOL;
             $table_in_kebab_case = $this->toKebabCase($table);
             $table_in_pascal_case = $this->toPascalCase($table);
 

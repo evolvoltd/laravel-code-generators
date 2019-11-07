@@ -1,6 +1,7 @@
 import { mount, createLocalVue } from '@vue/test-utils';
+import Vuetify from 'vuetify';
 import DummyTable from '../../src/components/DummyTable';
-import { mockDummys } from './mock/dummykcs';
+import mockDummys from './mock/dummykcs';
 
 describe('DummyTable', () => {
   let wrapper;
@@ -23,7 +24,7 @@ describe('DummyTable', () => {
   });
 
   it('should render a row for each item in props.rows + a header row', () => {
-    expect(wrapper.findAll('tr')).toHaveLength(mockUsers.length + 1);
+    expect(wrapper.findAll('tr')).toHaveLength(mockDummys.length + 1);
   });
 
   // it('should emit a change-page event with page number as payload when next page button is clicked', () => {
@@ -36,7 +37,7 @@ describe('DummyTable', () => {
   //   expect(wrapper.emitted().edit[0]).toEqual([wrapper.vm.displayedItems[0]]);
   // });
   //
-  // it('should emit a custom event with dummy as payload when impersonate button is clicked', () => {
+  // it('should emit a custom event with dummy as payload when button is clicked', () => {
   //   wrapper.find('.js-actions-menu-activator').trigger('click');
   //   wrapper.findAll('.v-menu__content .v-list-item').at(0).trigger('click');
   //   expect(wrapper.emitted().impersonate[0]).toEqual([wrapper.vm.displayedItems[0]]);
