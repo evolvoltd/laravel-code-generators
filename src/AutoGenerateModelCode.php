@@ -467,9 +467,9 @@ class AutoGenerateModelCode extends Command
             ':item="' . $form_item_name . '.' . $object_field . '"' . PHP_EOL .
             ':error-messages="errors.' . $id_field . '"' . PHP_EOL .
             ':label="$t(\'' . $object_field . '\')"' . PHP_EOL .
-            'text-field="id"' . PHP_EOL .
-            'hint="Currently displays #id in the options list, change form field\'s text-field value to change it"' . PHP_EOL .
-            '@itemSelected="formMixin_setAutocompleteValue($event, \'' . $object_field . '\')"' . PHP_EOL .
+            'item-text="name"' . PHP_EOL .
+            'item-value="id"' . PHP_EOL .
+            '@input="formMixin_setAutocompleteValue($event, \'' . $object_field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
             '</v-col>' . PHP_EOL;
 
