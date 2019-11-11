@@ -469,7 +469,7 @@ class AutoGenerateModelCode extends Command
             ':label="$t(\'' . $object_field . '\')"' . PHP_EOL .
             'item-text="name"' . PHP_EOL .
             'item-value="id"' . PHP_EOL .
-            '@input="formMixin_setAutocompleteValue($event, \'' . $object_field . '\')"' . PHP_EOL .
+            '@input="formMixin_setAutocompleteValue($event, ' . $form_item_name . ', \'' . $object_field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
             '</v-col>' . PHP_EOL;
 
