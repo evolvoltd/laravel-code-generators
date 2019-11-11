@@ -1,12 +1,13 @@
 <template>
   <div class="page-wrapper">
     <DummyTable
-      :rows="dummyArray"
-      :pagination="dummyPagination"
       :loading="isDataLoading"
+      :pagination="dummyPagination"
+      :rows="dummyArray"
       @change-page="getPaginatedDummys"
-      @delete="crudMixin_delete(onDelete, 'dummy', $event)"
       @edit="crudMixin_openForm('dummy', $event)"
+      @delete="crudMixin_delete(onDelete, 'dummy', $event)"
+      @new-item="crudMixin_openForm('dummy', newDummyTemplate)"
     />
 
     <v-dialog
@@ -18,28 +19,13 @@
       scrollable
     >
       <DummyForm
-        :dialog="isDiscountFormOpen"
-        :dummykc="dummyFormItem"
+        :dialog="isDummyFormOpen"
+        :form-item="dummyFormItem"
         @create="crudMixin_created('dummy', $event)"
         @update="crudMixin_updated('dummy', $event)"
-        @cancel="isDiscountFormOpen = false"
+        @cancel="isDummyFormOpen = false"
       />
     </v-dialog>
-
-    <v-scale-transition>
-      <v-btn
-        v-if="!isDataLoading && $vuetify.breakpoint.xsOnly"
-        color="primary"
-        bottom
-        dark
-        fab
-        fixed
-        right
-        @click.stop="crudMixin_openForm('dummy')"
-      >
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
-    </v-scale-transition>
   </div>
 </template>
 
@@ -47,7 +33,7 @@
 import DummyForm from '../components/DummyForm';
 import DummyTable from '../components/DummyTable';
 import crudMixin from '../mixins/crud-mixin';
-import { dummyService } from '../api/dummykc-service';
+import dummyService from '../api/dummykc-service';
 
 export default {
   name: 'Dummys',
@@ -66,6 +52,7 @@ export default {
         page: 1,
       },
       dummyFormItem: {},
+      newDummyTemplate: {},
       dummyFilterParams: '',
       isDummyFormOpen: false,
 
@@ -84,7 +71,7 @@ export default {
         dummyService.getPage,
         dummyService.model,
         pageNo,
-        this.dummyFilterParams
+        this.dummyFilterParams,
       );
     },
   },
