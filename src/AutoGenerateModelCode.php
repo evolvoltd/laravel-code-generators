@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class AutoGenerateModelCode extends Command
 {
@@ -43,6 +44,7 @@ class AutoGenerateModelCode extends Command
         $fillable_columns = [];
         $boolean_columns = [];
         $validation_rules = [];
+        $factory_attributes = [];
         $table_headers = [];
         $table_columns = [];
         $angular_model_attributes = [];
@@ -59,18 +61,17 @@ class AutoGenerateModelCode extends Command
 
         $form_fields = [];
         $column_index = 0;
-        $singular_table_name = (substr($table, strlen($table) - 4, 3) == 'ies') ? (substr($table, 0, -3) . 'y') : (substr($table, 0, -1));
+        $singular_table_name = Str::singular($table);
+        $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
+        $model_name_plural = Str::plural($model_name);
 
-        if (substr($table, -1) == 's')
-            $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
-        else
-            $model_name = str_replace('_', '', ucwords($table, '_'));
 
         foreach ($columns as $value) {
             if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by'])) {
                 $fillable_columns[] = $value->Field;
 
-                $validation_rules[] = '"' . $value->Field . '" => "required|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type) . '"';
+                $validation_rules[] = '"' . $value->Field . '" => "'.($value->Null==='YES'?'nullable':'required').'|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type) . '"';
+                $factory_attributes[] = '"' . $value->Field . '" => $faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
                 $angular_model_attributes[] = $value->Field . ': ' . $this->convertDatabaseColumnTypeToAngularType($value->Type) . ';';
                 $table_headers[] = '<th>' . ucfirst($value->Field) . '</th>';
                 $table_columns[] = '<td>{{' . $singular_table_name . '.' . $value->Field . '}}</td>';
@@ -327,30 +328,30 @@ class AutoGenerateModelCode extends Command
             //generate service
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyService.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("dummyService", lcfirst($model_name) . "Service", $file_contents);
-            $file_contents = str_replace("dummies", lcfirst($model_name) . "s", $file_contents);
+            $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
+            $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
             $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
-            file_put_contents(app_path('Services/' . $model_name . 'Service' . '.php'), $file_contents);
+            file_put_contents(app_path('Services/' . $model_name_plural . 'Service' . '.php'), $file_contents);
 
 
             //generate controller
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyController.php.tpl');
-            $file_contents = str_replace("DummyController", $model_name . 'sController', $file_contents);
+            $file_contents = str_replace("DummyController", $model_name_plural . 'Controller', $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("dummyService", lcfirst($model_name) . "Service", $file_contents);
-            $file_contents = str_replace("dummies", lcfirst($model_name) . "s", $file_contents);
+            $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
+            $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
             $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
-            file_put_contents(app_path('Http/Controllers/' . $model_name . 'sController' . '.php'), $file_contents);
+            file_put_contents(app_path('Http/Controllers/' . $model_name_plural . 'Controller' . '.php'), $file_contents);
 
 
             //generate crud route
             $route = str_replace('_', '-', $table);
             $file_contents = file_get_contents(base_path('routes/api.php'));
-            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name . 'sController\');';
+            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name_plural . 'Controller\');';
            // file_put_contents(base_path('routes/api.php'), $file_contents);
 
             //generate find route
-            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', \'' . $model_name . 'sController@find\');';
+            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', \'' . $model_name_plural . 'Controller@find\');';
             file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
@@ -360,8 +361,14 @@ class AutoGenerateModelCode extends Command
             //generate request class
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Requests/Dummy/StoreOrUpdate.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("return []", 'return [' . PHP_EOL . '        ' . implode(',' . PHP_EOL . '        ', $validation_rules) . '' . PHP_EOL . '    ]', $file_contents);
+            $file_contents = str_replace("return []", 'return [' . PHP_EOL . '            ' . implode(',' . PHP_EOL . '            ', $validation_rules) . '' . PHP_EOL . '        ]', $file_contents);
             file_put_contents(app_path('Http/Requests/' . $model_name . '/StoreOrUpdate' . '.php'), $file_contents);
+
+            //generate factory class
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyFactory.php.tpl');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("return []", 'return [' . PHP_EOL . '        ' . implode(',' . PHP_EOL . '        ', $factory_attributes) . '' . PHP_EOL . '    ]', $file_contents);
+            file_put_contents(base_path('database/factories/' . $model_name . 'Factory' . '.php'), $file_contents);
 
 
             $dir = app_path('Logic/Helpers/Traits');
@@ -431,6 +438,25 @@ class AutoGenerateModelCode extends Command
             return "date";
         if (strstr($column_type, 'timestamp') != false)
             return "date";
+        return "";
+    }
+
+    private function convertDatabaseColumnTypeToFakerFunction($column_type)
+    {
+        if (strstr($column_type, 'tinyint(1)') != false)
+            return "boolean";
+        if (strstr($column_type, 'int') != false)
+            return "numberBetween(0,1000)";
+        if (strstr($column_type, 'decimal') != false)
+            return "randomFloat(2)";
+        if(strstr($column_type,'varchar')!=false)
+            return "word";
+        if(strstr($column_type,'text')!=false)
+            return "sentence";
+        if (strstr($column_type, 'date') != false)
+            return "date";
+        if (strstr($column_type, 'timestamp') != false)
+            return "dateTime";
         return "";
     }
 

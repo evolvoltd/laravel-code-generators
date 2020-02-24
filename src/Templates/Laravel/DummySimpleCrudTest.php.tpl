@@ -11,7 +11,7 @@ class testClass extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $user = factory(User::class)->states('admin')->create(['password' => bcrypt('abc123')]);
+        $user = factory(User::class)->states('admin')->create();
         Passport::actingAs($user);
     }
     public function testTypesCRUD()

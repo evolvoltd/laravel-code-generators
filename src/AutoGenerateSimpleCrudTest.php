@@ -5,6 +5,7 @@ namespace Evolvo\LaravelCodeGenerators;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AutoGenerateSimpleCrudTest extends Command
 {
@@ -41,14 +42,12 @@ class AutoGenerateSimpleCrudTest extends Command
     {
         $table = $this->argument('table');
 
-        $singular_table_name = (substr($table, strlen($table)-4, 3)=='ies')?(substr($table, 0, -3).'y'):(substr($table, 0, -1));
-        if(substr($table, -1)=='s')
-            $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
-        else
-            $model_name = str_replace('_', '', ucwords($table, '_'));
+        $singular_table_name = Str::singular($table);
+        $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
+        $model_name_plural = Str::plural($model_name);
 
 
-        $testName = $model_name;//gument('test_name');
+        $testName = $model_name_plural;
         $route = str_replace('_', '-', $table);
 
 
@@ -75,12 +74,11 @@ class AutoGenerateSimpleCrudTest extends Command
             $table_columns = [];
             $angular_model_attributes = [];
             $form_fields = [];
-            $singular_table_name = (substr($table, strlen($table) - 4, 3) == 'ies') ? (substr($table, 0, -3) . 'y') : (substr($table, 0, -1));
             foreach ($columns as $value) {
                 if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'])) {
                     $fillable_columns[] = $value->Field;
 
-                    $collumn_values[] = $this->getStoreData($value->Type);
+                    $collumn_values[] = $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
 
 
                 }
@@ -90,9 +88,7 @@ class AutoGenerateSimpleCrudTest extends Command
             foreach (array_combine($fillable_columns, $collumn_values) as $field => $value) {
                 $pieces[] = '"' . $field . '"' . ' => ' . $value . ', ';
             }
-            // $fillable_fields = serialize($fillable);
-
-            $fillable_fields = implode("\n", $pieces);
+            $fillable_fields = implode(PHP_EOL."            ", $pieces);
         }
 
         //generate test
@@ -109,12 +105,12 @@ class AutoGenerateSimpleCrudTest extends Command
         $sufix = $testName . 'Test' . '.php';
 
         file_put_contents(base_path('tests/Feature/' . $testName . '/' . $sufix), $file_contents);
-        
+
         $this->info($testName . " test template created!");
 
 
     }
-    
+
     private function getStoreData($column_type)
     {
         if (strstr($column_type, 'tinyint(1)') != false)
@@ -131,6 +127,27 @@ class AutoGenerateSimpleCrudTest extends Command
             return "'" . Carbon::now() . "'";
         if (strstr($column_type, 'timestamp') != false)
             return "'" . Carbon::now() . "'";
+        return "";
+    }
+
+    private function convertDatabaseColumnTypeToFakerFunction($column_type)
+    {
+        if (strstr($column_type, 'tinyint(1)') != false)
+            return '$this->faker->boolean';
+        if (strstr($column_type, 'int') != false)
+            return '$this->faker->numberBetween(0,1000)';
+        if (strstr($column_type, 'decimal') != false)
+            return '$this->faker->randomFloat(2)';
+        if(strstr($column_type,'varchar')!=false)
+            return '$this->faker->word';
+        if(strstr($column_type,'text')!=false)
+            return '$this->faker->sentence';
+        if (strstr($column_type, 'datetime') != false)
+            return '$this->faker->dateTime->format("Y-m-d H:i:s")';
+        if (strstr($column_type, 'date') != false)
+            return '$this->faker->date->format("Y-m-d")';
+        if (strstr($column_type, 'timestamp') != false)
+            return '$this->faker->dateTime->format("Y-m-d H:i:s")';
         return "";
     }
 

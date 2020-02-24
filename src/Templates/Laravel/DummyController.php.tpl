@@ -9,7 +9,7 @@ use App\Http\Requests\Dummy\StoreOrUpdate;
 
 class DummyController extends Controller
 {
-    private dummyItemService;
+    private $dummyService;
 
     public function __construct(DummyService dummyItemService)
     {
