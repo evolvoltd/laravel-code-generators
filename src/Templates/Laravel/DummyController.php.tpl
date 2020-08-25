@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Dummy;
 use Illuminate\Http\Request;
-use App\Services\DummyService;
+use App\Services\ServiceName;
 use App\Http\Requests\Dummy\StoreOrUpdate;
 
 class DummyController extends Controller
 {
     private $dummyService;
 
-    public function __construct(DummyService dummyItemService)
+    public function __construct(ServiceName dummyItemService)
     {
         $this->dummyService = dummyItemService;
     }
