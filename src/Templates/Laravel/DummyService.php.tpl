@@ -5,7 +5,7 @@ use App\Models\Dummy;
 use Illuminate\Http\Request;
 
 
-class DummyService
+class DummiesService
 {
     public function dummiesQuery(Request $request)
     {

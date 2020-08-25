@@ -21,6 +21,7 @@ class LaravelCodeGeneratorsServiceProvider extends ServiceProvider
                 AutoGenerateTestResponse::class,
                 AutoGenerateSingleTest::class,
                 AutoGenerateSimpleCrudTest::class,
+                AutoGenerateSwaggerDoc::class,
             ]);
         }
     }

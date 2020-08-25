@@ -328,6 +328,7 @@ class AutoGenerateModelCode extends Command
             //generate service
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyService.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("DummiesService", $model_name_plural . 'Service', $file_contents);
             $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
             $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
             $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
@@ -340,15 +341,15 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
             $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
-            $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
+            $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name_plural), $file_contents);
+            $file_contents = str_replace("ServiceName", $model_name_plural .'Service', $file_contents);
             file_put_contents(app_path('Http/Controllers/' . $model_name_plural . 'Controller' . '.php'), $file_contents);
-
 
             //generate crud route
             $route = str_replace('_', '-', $table);
             $file_contents = file_get_contents(base_path('routes/api.php'));
             $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name_plural . 'Controller\');';
-           // file_put_contents(base_path('routes/api.php'), $file_contents);
+            // file_put_contents(base_path('routes/api.php'), $file_contents);
 
             //generate find route
             $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', \'' . $model_name_plural . 'Controller@find\');';
@@ -370,7 +371,6 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("return []", 'return [' . PHP_EOL . '        ' . implode(',' . PHP_EOL . '        ', $factory_attributes) . '' . PHP_EOL . '    ]', $file_contents);
             file_put_contents(base_path('database/factories/' . $model_name . 'Factory' . '.php'), $file_contents);
 
-
             $dir = app_path('Logic/Helpers/Traits');
             if (!file_exists($dir)) {
                 mkdir($dir, 0777, true);
@@ -383,22 +383,30 @@ class AutoGenerateModelCode extends Command
         }
 
         // if ($this->confirm('Create tests for generated CRUD?')) {
-        if($this->option('simple-crud-test')){
-            Artisan::call('simple-crud-test',
-                [
-                    'table' => $table
-                ]
-            );
+        //if($this->option('simple-crud-test')){
+        Artisan::call('simple-crud-test',
+            [
+                'table' => $table
+            ]
+        );
+        $this->info("Tests created!");
 
-        }
+
+        Artisan::call('generate:swagger',
+            [
+                'table' => $table
+            ]
+        );
+        $this->info("Swagger doc created!");
+        // }
 
 
-        if(!$this->option('no-t')  && !$this->option('simple-crud-test')) {
-            Artisan::call('generate:test',
-                [
-                    'table' => $table
-                ]
-            );
+//        if(!$this->option('no-t')  && !$this->option('simple-crud-test')) {
+//            Artisan::call('generate:test',
+//                [
+//                    'table' => $table
+//                ]
+//            );
 //            if ($this->option('tr')) {
 //                Artisan::call('generate:test-response',
 //                    [
@@ -406,8 +414,8 @@ class AutoGenerateModelCode extends Command
 //                    ]
 //                );
 //            }
-            $this->info("Tests created!");
-        }
+//            $this->info("Tests created!");
+//        }
 
 
 
@@ -548,7 +556,7 @@ class AutoGenerateModelCode extends Command
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
             '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
             '</BaseDatepickerInput>' . PHP_EOL;
-            '</v-col>' . PHP_EOL;
+        '</v-col>' . PHP_EOL;
     }
 
     private function getAngularFormField(string $field, string $singular_table_name): string
