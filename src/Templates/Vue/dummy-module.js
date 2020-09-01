@@ -16,9 +16,6 @@ const state = {
   dummyValidationErrors: {},
   dummyFilterParams: getDefaultDummyFilterParams(),
   newDummy: getDefaultDummyFormItem(),
-  loadingDummys: false,
-  savingDummy: false,
-  disabledDummyIds: {},
 };
 
 const getters = {};
@@ -65,27 +62,10 @@ const mutations = {
   SET_DUMMY_VALIDATION_ERRORS(state, dummyValidationErrors) {
     state.dummyValidationErrors = dummyValidationErrors;
   },
-
-  SET_LOADING_DUMMYS(state, loading) {
-    state.loadingDummys = loading;
-  },
-
-  SET_SAVING_DUMMY(state, saving) {
-    state.savingDummy = saving;
-  },
-
-  DISABLE_DUMMY(state, { id, reason }) {
-    Vue.set(state.disabledDummyIds, id, reason);
-  },
-
-  ENABLE_DUMMY(state, id) {
-    Vue.delete(state.disabledDummyIds, id);
-  },
 };
 
 const actions = {
   fetchDummys({ commit }, params) {
-    commit('SET_LOADING_DUMMYS', true);
     return dummyService
       .getPage(params)
       .then((res) => {
@@ -95,14 +75,10 @@ const actions = {
         }
         commit('SET_FILTER_PARAMS', params);
         return res.data;
-      })
-      .finally(() => {
-        commit('SET_LOADING_DUMMYS', false);
       });
   },
 
   storeDummy({ commit }, dummy) {
-    commit('SET_SAVING_DUMMY', true);
     return dummyService
       .create(dummy)
       .then((res) => {
@@ -113,9 +89,6 @@ const actions = {
       .catch((err) => {
         commit('SET_DUMMY_VALIDATION_ERRORS', mapErrorsToInputs(err));
         throw err;
-      })
-      .finally(() => {
-        commit('SET_SAVING_DUMMY', false);
       });
   },
 
@@ -132,7 +105,6 @@ const actions = {
   },
 
   updateDummy({ commit }, dummy) {
-    commit('SET_SAVING_DUMMY', true);
     return dummyService
       .update(dummy)
       .then((res) => {
@@ -143,8 +115,7 @@ const actions = {
       .catch((err) => {
         commit('SET_DUMMY_VALIDATION_ERRORS', mapErrorsToInputs(err));
         throw err;
-      })
-      .finally(() => commit('SET_SAVING_DUMMY', false));
+      });
   },
 
   deleteDummy({ commit }, dummy) {

@@ -17,8 +17,7 @@
     <template v-slot:item.actions="{ item }">
       <BaseActionMenu
         :actions="actions"
-        :disabled="disabledItemIds[item.id]"
-        :loading="disabledItemIds[item.id]"
+        :loading="$store.getters.loading[`delete:api/dummys/${item.id}`]"
         :item="item"
       />
     </template>
@@ -56,10 +55,6 @@ export default {
     pagination: {
       type: Object,
       required: true,
-    },
-    disabledItemIds: {
-      type: Object,
-      default: () => ({}),
     },
     loading: {
       type: Boolean,

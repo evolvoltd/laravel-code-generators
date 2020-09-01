@@ -41,7 +41,7 @@
 
 <script>
 VUE_FORM_IMPORTS
-import formMixin from '../../mixins/form-mixin';
+import formMixin from '@/mixins/form-mixin';
 
 export default {
   name: 'DummyForm',

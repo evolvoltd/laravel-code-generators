@@ -1,4 +1,4 @@
-import httpClient from './http-client';
+import httpClient from '@/api/http-client';
 
 const endpoint = 'api/dummys';
 

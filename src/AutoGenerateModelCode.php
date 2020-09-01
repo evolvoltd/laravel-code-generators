@@ -227,6 +227,16 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $table_in_pascal_case . '.vue'), $file_contents);
 
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/CreateDummy.vue');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/Create' . $model_name . '.vue'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/EditDummy.vue');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/Edit' . $model_name . '.vue'), $file_contents);
+
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/dummy-service.js');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);

@@ -14,7 +14,6 @@
     <BaseTableLoader :loading="!dummys">
       <DummyTable
         :items="dummys"
-        :disabled-item-ids="disabledDummyIds"
         :loading="loadingDummys"
         :pagination="dummyPagination"
         @delete="deleteDummy"
@@ -44,8 +43,6 @@ export default {
     'dummys',
     'dummyPagination',
     'dummyFilterParams',
-    'loadingDummys',
-    'disableDummyIds',
   ]),
 
   created() {
