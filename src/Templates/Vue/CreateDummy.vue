@@ -8,9 +8,9 @@
     persistent
   >
     <DummyForm
-      :dummy="newDummy"
+      :dummykc="newDummy"
       :errors="dummyValidationErrors"
-      :disabled="$store.getters.loading['post:api/dummys']"
+      :disabled="$store.getters.loading['post:api/dummykcs']"
       @clear:errors="clearDummyValidationErrors"
       @cancel="goToDummysPage"
       @save="onSave"

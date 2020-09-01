@@ -39,8 +39,7 @@
   </v-form>
 </template>
 
-<script>
-VUE_FORM_IMPORTS
+<script>VUE_FORM_IMPORTS
 import formMixin from '@/mixins/form-mixin';
 
 export default {
@@ -64,6 +63,11 @@ export default {
       type: Boolean,
       default: false,
     },
+  },
+
+  data() {
+    return {
+      VUE_FORM_DATA_ATTRIBUTES};
   },
 
   computed: {

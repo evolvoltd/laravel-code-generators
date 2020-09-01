@@ -8,9 +8,9 @@
     persistent
   >
     <DummyForm
-      :disabled="$store.getters.loading[`put:api/dummys/${editedDummy.id}`]"
+      :disabled="$store.getters.loading[`put:api/dummykcs/${editedDummy.id}`]"
       :errors="dummyValidationErrors"
-      :dummy="editedDummy"
+      :dummykc="editedDummy"
       @clear:errors="clearDummyValidationErrors"
       @cancel="goToDummysPage"
       @save="onSave"
@@ -32,12 +32,12 @@ export default {
 
   beforeRouteEnter(to, from, next) {
     store
-      .dispatch('dummys/editDummy', to.params.id)
+      .dispatch('dummys/editDummy', +to.params.id)
       .then(() => {
         next();
       })
       .catch(() => {
-        next({ name: 'dummys' });
+        next({ name: 'dummys', query: store.state.dummys.dummyFilterParams });
       });
   },
 

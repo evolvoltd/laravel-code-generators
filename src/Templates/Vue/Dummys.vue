@@ -2,11 +2,11 @@
   <div class="page-wrapper">
     <div class="d-flex align-center pa-4">
       <h1 class="text-h6">
-        {{ $t('dummys') }}
+        {{ $t('dummyscs') }}
       </h1>
       <v-spacer />
       <BasePrimaryActionButton
-        :label="$t('create_dummy')"
+        :label="$t('create_dummysc')"
         @click="$router.push({ name: 'createDummy' })"
       />
     </div>
@@ -14,20 +14,22 @@
     <BaseTableLoader :loading="!dummys">
       <DummyTable
         :items="dummys"
-        :loading="loadingDummys"
+        :loading="$store.getters.loading['get:api/dummykcs']"
         :pagination="dummyPagination"
         @delete="deleteDummy"
         @edit="$router.push({ name: 'editDummy', params: { id: $event.id } })"
         @update:page="onPageChange"
       />
     </BaseTableLoader>
+
+    <router-view/>
   </div>
 </template>
 
 <script>
 import { mapActions, mapState } from 'vuex';
-import BaseTableLoader from '@/components/BaseTableLoader';
-import BasePrimaryActionButton from '@/components/BasePrimaryActionButton';
+import BaseTableLoader from '@/components/base/BaseTableLoader';
+import BasePrimaryActionButton from '@/components/base/BasePrimaryActionButton';
 import DummyTable from '@/components/DummyTable';
 
 export default {

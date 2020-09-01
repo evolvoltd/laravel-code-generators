@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import dummyService from '@/api/dummy-service';
+import dummyService from '@/api/dummykc-service';
 import eventBus, { OPEN_SNACKBAR, openConfirmDialog } from '@/util/event-bus';
 import i18n from '@/i18n/i18n-config';
 import { updateArrayItem, removeArrayItem } from '@/util/array';
@@ -30,17 +30,13 @@ const mutations = {
     };
   },
 
-  SET_FILTER_PARAMS(state, params) {
+  SET_DUMMY_FILTER_PARAMS(state, params) {
     state.dummyFilterParams = params;
   },
 
   SET_EDITED_DUMMY(state, dummy) {
     state.dummyValidationErrors = {};
     state.editedDummy = JSON.parse(JSON.stringify(dummy));
-  },
-
-  CLEAR_VALIDATION_ERRORS(state, field) {
-    Vue.delete(state.dummyValidationErrors, field);
   },
 
   STORE_DUMMY(state, dummy) {
@@ -62,6 +58,10 @@ const mutations = {
   SET_DUMMY_VALIDATION_ERRORS(state, dummyValidationErrors) {
     state.dummyValidationErrors = dummyValidationErrors;
   },
+
+  CLEAR_DUMMY_VALIDATION_ERRORS(state, field) {
+    Vue.delete(state.dummyValidationErrors, field);
+  },
 };
 
 const actions = {
@@ -73,7 +73,7 @@ const actions = {
         if (params.page !== state.dummyFilterParams.page) {
           window.scrollTo(0, 0);
         }
-        commit('SET_FILTER_PARAMS', params);
+        commit('SET_DUMMY_FILTER_PARAMS', params);
         return res.data;
       });
   },
@@ -83,7 +83,7 @@ const actions = {
       .create(dummy)
       .then((res) => {
         commit('STORE_DUMMY', res.data);
-        eventBus.$emit(OPEN_SNACKBAR, i18n.t('dummy_created'));
+        eventBus.$emit(OPEN_SNACKBAR, i18n.t('dummysc_created'));
         return res.data;
       })
       .catch((err) => {
@@ -109,7 +109,7 @@ const actions = {
       .update(dummy)
       .then((res) => {
         commit('UPDATE_DUMMY', res.data);
-        eventBus.$emit(OPEN_SNACKBAR, i18n.t('dummy_updated'));
+        eventBus.$emit(OPEN_SNACKBAR, i18n.t('dummysc_updated'));
         return res.data;
       })
       .catch((err) => {
@@ -118,22 +118,22 @@ const actions = {
       });
   },
 
+  clearDummyValidationErrors({ commit }, field) {
+    commit('CLEAR_DUMMY_VALIDATION_ERRORS', field);
+  },
+
   deleteDummy({ commit }, dummy) {
     openConfirmDialog({
-      title: i18n.t('confirm_dummy_delete'),
+      title: i18n.t('confirm_dummysc_delete'),
     }).then((confirmed) => {
       if (!confirmed) {
         return;
       }
       dummyService.delete(dummy).then(() => {
         commit('DELETE_DUMMY', dummy);
-        eventBus.$emit(OPEN_SNACKBAR, i18n.t('dummy_deleted'));
+        eventBus.$emit(OPEN_SNACKBAR, i18n.t('dummysc_deleted'));
       });
     });
-  },
-
-  clearDummyValidationErrors({ commit }, field) {
-    commit('CLEAR_VALIDATION_ERRORS', field);
   },
 };
 

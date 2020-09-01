@@ -16,8 +16,8 @@
   >
     <template v-slot:item.actions="{ item }">
       <BaseActionMenu
-        :actions="actions"
-        :loading="$store.getters.loading[`delete:api/dummys/${item.id}`]"
+        :actions="getRowActions(item)"
+        :loading="$store.getters.loading[`delete:api/dummykcs/${item.id}`]"
         :item="item"
       />
     </template>
@@ -62,25 +62,6 @@ export default {
     },
   },
 
-  data() {
-    return {
-      actions: [
-        {
-          callback: p => this.$emit('edit', p),
-          label: this.$t('edit'),
-          icon: 'mdi-pencil',
-        },
-        {
-          callback: p => this.$emit('delete', p),
-          label: this.$t('delete'),
-          icon: 'mdi-delete',
-        },
-      ],
-      headers: [
-        VUE_TABLE_HEADERS],
-    };
-  },
-
   computed: {
     headers() {
       return [
@@ -89,15 +70,15 @@ export default {
   },
 
   methods: {
-    getRowActions(dummy) {
+    getRowActions() {
       return [
         {
-          callback: p => this.$emit('edit', p),
+          callback: (p) => this.$emit('edit', p),
           label: this.$t('edit'),
           icon: 'mdi-pencil',
         },
         {
-          callback: p => this.$emit('delete', p),
+          callback: (p) => this.$emit('delete', p),
           label: this.$t('delete'),
           icon: 'mdi-delete',
         },
