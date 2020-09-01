@@ -1,21 +1,17 @@
-import http from './http';
+import httpClient from './http-client';
 
 const endpoint = 'api/dummys';
 
 const dummyService = {
-  model: 'dummy',
+  getPage: (params) => httpClient.get(endpoint, { params }),
 
-  getPage: (page, query) => http.get(`${endpoint}?page=${page}&${query}`),
+  search: (query) => httpClient.get(`${endpoint}/find/${query}`),
 
-  getAll: query => http.get(`${endpoint}?${query}`),
+  create: (dummy) => httpClient.post(`${endpoint}`, dummy),
 
-  search: query => http.get(`${endpoint}/find/${query}`),
+  update: dummy => httpClient.put(`${endpoint}/${dummy.id}`, dummy),
 
-  create: dummy => http.post(`${endpoint}`, dummy),
-
-  update: dummy => http.put(`${endpoint}/${dummy.id}`, dummy),
-
-  delete: dummy => http.delete(`${endpoint}/${dummy.id}`),
+  delete: dummy => httpClient.delete(`${endpoint}/${dummy.id}`),
 };
 
 export default dummyService;
