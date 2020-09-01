@@ -1,78 +1,72 @@
 <template>
   <div class="page-wrapper">
-    <DummyTable
-      :loading="isDataLoading"
-      :pagination="dummyPagination"
-      :rows="dummyArray"
-      @change-page="getPaginatedDummys"
-      @edit="crudMixin_openForm('dummy', $event)"
-      @delete="crudMixin_delete(onDelete, 'dummy', $event)"
-      @new-item="crudMixin_openForm('dummy', newDummyTemplate)"
-    />
-
-    <v-dialog
-      v-model="isDummyFormOpen"
-      :fullscreen="$vuetify.breakpoint.xsOnly"
-      transition="slide-y-reverse-transition"
-      max-width="800"
-      persistent
-      scrollable
-    >
-      <DummyForm
-        :dialog="isDummyFormOpen"
-        :form-item="dummyFormItem"
-        @create="crudMixin_created('dummy', $event)"
-        @update="crudMixin_updated('dummy', $event)"
-        @cancel="isDummyFormOpen = false"
+    <div class="d-flex align-center pa-4">
+      <h1 class="text-h6">
+        {{ $t('dummyscs') }}
+      </h1>
+      <v-spacer />
+      <BasePrimaryActionButton
+        :label="$t('create_dummysc')"
+        @click="$router.push({ name: 'createDummy' })"
       />
-    </v-dialog>
+    </div>
+
+    <BaseTableLoader :loading="!dummys">
+      <DummyTable
+        :items="dummys"
+        :loading="$store.getters.loading['get:api/dummykcs']"
+        :pagination="dummyPagination"
+        @delete="deleteDummy"
+        @edit="$router.push({ name: 'editDummy', params: { id: $event.id } })"
+        @update:page="onPageChange"
+      />
+    </BaseTableLoader>
+
+    <router-view/>
   </div>
 </template>
 
 <script>
-import DummyForm from '../components/DummyForm';
-import DummyTable from '../components/DummyTable';
-import crudMixin from '../mixins/crud-mixin';
-import dummyService from '../api/dummykc-service';
+import { mapActions, mapState } from 'vuex';
+import BaseTableLoader from '@/components/base/BaseTableLoader';
+import BasePrimaryActionButton from '@/components/base/BasePrimaryActionButton';
+import DummyTable from '@/components/DummyTable';
 
 export default {
   name: 'Dummys',
 
   components: {
-    DummyForm,
+    BaseTableLoader,
+    BasePrimaryActionButton,
     DummyTable,
   },
 
-  mixins: [crudMixin],
-
-  data() {
-    return {
-      dummyArray: [],
-      dummyPagination: {
-        page: 1,
-      },
-      dummyFormItem: {},
-      newDummyTemplate: {},
-      dummyFilterParams: '',
-      isDummyFormOpen: false,
-
-      isDataLoading: true,
-      onDelete: dummyService.delete,
-    };
-  },
+  computed: mapState('dummys', [
+    'dummys',
+    'dummyPagination',
+    'dummyFilterParams',
+  ]),
 
   created() {
-    this.getPaginatedDummys(1);
+    this.fetchDummys(this.$route.query);
+  },
+
+  beforeRouteUpdate(to, from, next) {
+    if (
+      JSON.stringify(this.dummyFilterParams) !== JSON.stringify(to.query) &&
+      to.name === 'dummys'
+    ) {
+      this.fetchDummys(to.query);
+    }
+    next();
   },
 
   methods: {
-    getPaginatedDummys(pageNo) {
-      this.crudMixin_getPage(
-        dummyService.getPage,
-        dummyService.model,
-        pageNo,
-        this.dummyFilterParams,
-      );
+    ...mapActions('dummys', ['fetchDummys', 'deleteDummy']),
+
+    onPageChange(page) {
+      const query = { ...this.dummyFilterParams, page };
+      this.$router.push({ name: 'dummys', query });
     },
   },
 };

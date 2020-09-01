@@ -51,7 +51,6 @@ class AutoGenerateModelCode extends Command
 
         $vue_form_fields = [];
         $vue_table_headers = '';
-        $vue_first_form_field = '';
         $vue_form_data_attributes = '';
         $vue_form_imports = '';
         $vue_form_components = '';
@@ -64,7 +63,8 @@ class AutoGenerateModelCode extends Command
         $singular_table_name = Str::singular($table);
         $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
         $model_name_plural = Str::plural($model_name);
-
+        $model_in_camel_case = $this->toCamelCase($singular_table_name);
+        $model_in_kebab_case = $this->toKebabCase($singular_table_name);
 
         foreach ($columns as $value) {
             if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by'])) {
@@ -75,49 +75,52 @@ class AutoGenerateModelCode extends Command
                 $angular_model_attributes[] = $value->Field . ': ' . $this->convertDatabaseColumnTypeToAngularType($value->Type) . ';';
                 $table_headers[] = '<th>' . ucfirst($value->Field) . '</th>';
                 $table_columns[] = '<td>{{' . $singular_table_name . '.' . $value->Field . '}}</td>';
+                $vue_field_label = $value->Field;
 
                 if (strpos($value->Field, '_id') !== false) {
                     if (!$is_vue_autocomplete_imported) {
-                        $vue_form_imports = $vue_form_imports .
-                            'import BaseAutocomplete from \'./base/BaseAutocomplete\'' . PHP_EOL;
+                        $vue_form_imports = $vue_form_imports . PHP_EOL .
+                            'import BaseAutocomplete from \'@/components/base/BaseAutocomplete\';';
                         $vue_form_components = $vue_form_components .
                             'BaseAutocomplete,' . PHP_EOL;
                     }
 
                     $object_field = str_replace('_id', '', $value->Field);
+                    $vue_field_label = str_replace('_id', '', $value->Field);
+                    $object_in_kebab_case = $this->toKebabCase($object_field);
                     $object_field = $this->toCamelCase($object_field);
-                    $vue_form_imports = $vue_form_imports .
-                        'import { ' . $object_field . 'Service } from \'../api/' . $object_field . '-service\';' . PHP_EOL;
+                    $vue_form_imports = $vue_form_imports . PHP_EOL .
+                        'import ' . $object_field . 'Service from \'@/api/' . $object_in_kebab_case . '-service\';';
                     $vue_form_data_attributes = $vue_form_data_attributes .
                         $object_field . 'SearchFunction: ' . $object_field . 'Service.search,' . PHP_EOL;
 
                     $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
                     $is_vue_autocomplete_imported = true;
-                    $vue_translations = $vue_translations . '"' . $object_field . '": "",' . PHP_EOL;
                 } else if ($value->Type === 'date') {
                     if (!$is_vue_datepicker_imported) {
-                        $vue_form_imports = $vue_form_imports .
-                            'import BaseDatepicker from \'./base/BaseDatepicker\'' . PHP_EOL;
+                        $vue_form_imports = $vue_form_imports . PHP_EOL .
+                            'import BaseDatepicker from \'@/components/base/BaseDatepicker\';';
                         $vue_form_components = $vue_form_components .
                             'BaseDatepicker,' . PHP_EOL;
                     }
                     $vue_form_fields[] = $this->getVueDateField($value->Field, $singular_table_name);
                     $is_vue_datepicker_imported = true;
-                    $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 } else if ($value->Type === 'tinyint(1)') {
                     $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name);
-                    $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
+                } else if ($value->Type === 'text') {
+                    $vue_form_fields[] = $this->getVueTextArea($value->Field, $singular_table_name);
+                } else if ((strstr($value->Type, 'int') || strstr($value->Type, 'decimal') || strstr($value->Type, 'float'))) {
+                    $vue_form_fields[] = $this->getVueNumberField($value->Field, $singular_table_name);
                 } else {
                     $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name);
-                    $vue_translations = $vue_translations . '"' . $value->Field . '": "",' . PHP_EOL;
                 }
 
                 if ($column_index === 0) {
-                    $vue_first_form_field = $value->Field;
-                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\'),' . PHP_EOL . 'value: \'' . $value->Field . '\',' . PHP_EOL . '},' . PHP_EOL;
+                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $vue_field_label . '\'),' . PHP_EOL . 'value: \'' . $value->Field . '\',' . PHP_EOL . '},' . PHP_EOL;
                 } else {
-                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $value->Field . '\'),' . PHP_EOL . 'value: \'' . $value->Field . '\',' . PHP_EOL . 'hidden: \'xsOnly\',' . PHP_EOL . '},' . PHP_EOL;
+                    $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'text: this.$t(\'' . $vue_field_label . '\'),' . PHP_EOL . 'value: \'' . $value->Field . '\',' . PHP_EOL . 'hidden: \'xsOnly\',' . PHP_EOL . '},' . PHP_EOL;
                 }
+                $vue_translations = $vue_translations . '"' . $vue_field_label . '": "",' . PHP_EOL;
 
                 $form_fields[] = $this->getAngularFormField($value->Field, $singular_table_name);
 
@@ -193,7 +196,7 @@ class AutoGenerateModelCode extends Command
             file_put_contents(app_path('Console/Commands/Output/Angular/' . $table . '/app-routing.module.ts'), $file_contents);
 
         } else if ($this->option('only-vue')) {
-            $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'value: \'actions\'),' . PHP_EOL . '},' . PHP_EOL;
+            $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'value: \'actions\',' . PHP_EOL . '},' . PHP_EOL;
             $table_in_kebab_case = $this->toKebabCase($table);
             $table_in_pascal_case = $this->toPascalCase($table);
 
@@ -201,9 +204,6 @@ class AutoGenerateModelCode extends Command
             if (!file_exists($dir)) {
                 mkdir($dir, 0777, true);
             }
-
-            $model_in_camel_case = $this->toCamelCase($singular_table_name);
-            $model_in_kebab_case = $this->toKebabCase($singular_table_name);
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
             $file_contents = str_replace("dummysc", $singular_table_name, $file_contents);
@@ -215,35 +215,56 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("VUE_FORM_COMPONENTS", $vue_form_components, $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Form.vue'), $file_contents);
 
-            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.spec.js');
-            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
-            $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
-            $file_contents = str_replace("VUE_FORM_FIELD_NAME", $vue_first_form_field, $file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Form.spec.js'), $file_contents);
-
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.vue');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
             $file_contents = str_replace("VUE_TABLE_HEADERS", $vue_table_headers, $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Table.vue'), $file_contents);
 
-            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyTable.spec.js');
-            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
-            $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_name . 'Table.spec.js'), $file_contents);
-
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/Dummys.vue');
             $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
+            $file_contents = str_replace("dummysc", $singular_table_name, $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $table_in_pascal_case . '.vue'), $file_contents);
 
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/CreateDummy.vue');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/Create' . $model_name . '.vue'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/EditDummy.vue');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/Edit' . $model_name . '.vue'), $file_contents);
+
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/dummy-service.js');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_in_kebab_case . '-service.js'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/dummys-module.js');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
+            $file_contents = str_replace("dummysc", $singular_table_name, $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("DUMMY", strtoupper($singular_table_name), $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/' . $model_in_kebab_case . 's-module.js'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/router.js');
+            $file_contents = str_replace("dummykc", $model_in_kebab_case, $file_contents);
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/router.js'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/README.md');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("dummy", $model_in_camel_case, $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/README.md'), $file_contents);
 
             $vue_translations = $vue_translations .
                 '"' . $singular_table_name . '": "",' . PHP_EOL .
@@ -253,7 +274,8 @@ class AutoGenerateModelCode extends Command
                 '"' . $singular_table_name . '_deleted": "",' . PHP_EOL .
                 '"create_' . $singular_table_name . '": "",' . PHP_EOL .
                 '"new_' . $singular_table_name . '": "",' . PHP_EOL .
-                '"edit_' . $singular_table_name . '": ""';
+                '"edit_' . $singular_table_name . '": "",' . PHP_EOL .
+                '"confirm_' . $singular_table_name . '_delete": ""';
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/translations.json');
             $file_contents = str_replace("VUE_TRANSLATIONS", $vue_translations, $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/translations.json'), $file_contents);
@@ -499,7 +521,48 @@ class AutoGenerateModelCode extends Command
 
         $result = $result .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
-            '@blur="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
+            '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
+            '/>' . PHP_EOL .
+            '</v-col>' . PHP_EOL;
+
+        return $result;
+    }
+
+    private function getVueNumberField(string $field, string $singular_table_name): string
+    {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+
+        $result =
+            '<v-col cols="12" sm="6">' . PHP_EOL .
+            '<v-text-field' . PHP_EOL .
+            'v-model.number="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
+
+        $result = $result .
+            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
+            'type="number"' . PHP_EOL .
+            '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
+            '/>' . PHP_EOL .
+            '</v-col>' . PHP_EOL;
+
+        return $result;
+    }
+
+    private function getVueTextArea(string $field, string $singular_table_name): string
+    {
+        $form_item_name = $this->toCamelCase($singular_table_name);
+
+        $result =
+            '<v-col cols="12">' . PHP_EOL .
+            '<v-textarea' . PHP_EOL .
+            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
+
+        $result = $result .
+            ':label="$t(\'' . $field . '\')"' . PHP_EOL .
+            'rows="1"' . PHP_EOL .
+            'auto-grow' . PHP_EOL .
+            '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
             '</v-col>' . PHP_EOL;
 
@@ -513,7 +576,7 @@ class AutoGenerateModelCode extends Command
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<BaseAutocomplete' . PHP_EOL .
             ':search-function="' . $object_field . 'SearchFunction"' . PHP_EOL .
-            ':item="' . $form_item_name . '.' . $object_field . '"' . PHP_EOL .
+            ':value="' . $form_item_name . '.' . $object_field . '"' . PHP_EOL .
             ':error-messages="errors.' . $id_field . '"' . PHP_EOL .
             ':label="$t(\'' . $object_field . '\')"' . PHP_EOL .
             'item-text="name"' . PHP_EOL .
@@ -537,7 +600,7 @@ class AutoGenerateModelCode extends Command
 
         $result = $result .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
-            '@blur="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
+            '@change="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
             '/>' . PHP_EOL .
             '</v-col>' . PHP_EOL;
 

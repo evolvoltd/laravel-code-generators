@@ -1,5 +1,5 @@
 <template>
-  <v-form @submit.prevent="onSubmit">
+  <v-form @submit.prevent="$emit('save', dummy)">
     <v-card>
       <v-card-title>
         {{ formTitle }}
@@ -15,7 +15,7 @@
           * {{ $t('must_be_filled') }}
         </span>
 
-        <v-spacer/>
+        <v-spacer />
 
         <v-btn
           color="primary"
@@ -26,8 +26,8 @@
         </v-btn>
 
         <v-btn
-          :disabled="isRequestPending"
-          :loading="isRequestPending"
+          :disabled="disabled"
+          :loading="disabled"
           type="submit"
           color="primary"
           text
@@ -39,12 +39,8 @@
   </v-form>
 </template>
 
-<script>
-VUE_FORM_IMPORTS
-import crudMixin from '../../mixins/crud-mixin';
-import dialogMixin from '../../mixins/dialog-mixin';
-import formMixin from '../../mixins/form-mixin';
-import dummyService from '../../api/dummy-service';
+<script>VUE_FORM_IMPORTS
+import formMixin from '@/mixins/form-mixin';
 
 export default {
   name: 'DummyForm',
@@ -52,34 +48,31 @@ export default {
   components: {
     VUE_FORM_COMPONENTS},
 
-  mixins: [crudMixin, dialogMixin, formMixin],
+  mixins: [formMixin],
 
   props: {
-    formItem: Object,
+    dummy: {
+      type: Object,
+      required: true,
+    },
+    errors: {
+      type: Object,
+      default: () => ({}),
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
     return {
-      errors: {},
-      isRequestPending: false,
-      dummy: {},
       VUE_FORM_DATA_ATTRIBUTES};
   },
 
   computed: {
     formTitle() {
       return this.$t(this.dummy.id ? 'edit_dummysc' : 'new_dummysc');
-    },
-  },
-
-  methods: {
-    onDialogOpen() {
-      this.dummy = JSON.parse(JSON.stringify(this.formItem));
-      this.errors = {};
-    },
-
-    onSubmit() {
-      this.crudMixin_createOrUpdate(dummyService, this.dummy);
     },
   },
 };
