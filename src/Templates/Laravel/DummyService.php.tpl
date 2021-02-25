@@ -18,7 +18,7 @@ class DummiesService
     public function createDummy(Request $request)
     {
         dummyItem = Dummy::create($request->all());
-        return dummyItem;
+        return dummyItem->fresh();
     }
 
     public function updateDummy(Request $request, Dummy dummyItem)

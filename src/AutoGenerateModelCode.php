@@ -363,7 +363,7 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
             $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
-            $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name_plural), $file_contents);
+            $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
             $file_contents = str_replace("ServiceName", $model_name_plural .'Service', $file_contents);
             file_put_contents(app_path('Http/Controllers/' . $model_name_plural . 'Controller' . '.php'), $file_contents);
 

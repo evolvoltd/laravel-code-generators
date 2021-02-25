@@ -24,7 +24,7 @@ class testClass extends TestCase
             post_data
         ];
         $response = $this->postJson(url('api/route'), $data);
-        $response->assertStatus(201);
+        $response->assertStatus(200);
         $response->assertJson($data);
         $itemId = $response->decodeResponseJson()["id"];
         //get single
