@@ -85,7 +85,6 @@ class AutoGenerateSwaggerDoc extends Command
 
 
                     $parameters .= '
- * 
  *          @OA\Parameter(
  *          name="' . $value->Field . '",
  *          description="' . $value->Field . '",

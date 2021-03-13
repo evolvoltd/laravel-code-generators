@@ -350,9 +350,7 @@ class AutoGenerateModelCode extends Command
             //generate service
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyService.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("DummiesService", $model_name_plural . 'Service', $file_contents);
-            $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
-            $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
+            $file_contents = str_replace("Dummies", $model_name_plural , $file_contents);
             $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
             file_put_contents(app_path('Services/' . $model_name_plural . 'Service' . '.php'), $file_contents);
 
@@ -362,7 +360,7 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("DummyController", $model_name_plural . 'Controller', $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
-            $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
+            $file_contents = str_replace("Dummies", $model_name_plural . "", $file_contents);
             $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
             $file_contents = str_replace("ServiceName", $model_name_plural .'Service', $file_contents);
             file_put_contents(app_path('Http/Controllers/' . $model_name_plural . 'Controller' . '.php'), $file_contents);
@@ -370,8 +368,7 @@ class AutoGenerateModelCode extends Command
             //generate crud route
             $route = str_replace('_', '-', $table);
             $file_contents = file_get_contents(base_path('routes/api.php'));
-            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name_plural . 'Controller\');';
-            // file_put_contents(base_path('routes/api.php'), $file_contents);
+            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name_plural . 'Controller\', [\'except\' => [\'show\']]);';
 
             //generate find route
             $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', \'' . $model_name_plural . 'Controller@find\');';
@@ -381,11 +378,16 @@ class AutoGenerateModelCode extends Command
             if (!file_exists($dir)) {
                 mkdir($dir, 0777, true);
             }
-            //generate request class
+            //generate request classes
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Requests/Dummy/StoreOrUpdate.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("return []", 'return [' . PHP_EOL . '            ' . implode(',' . PHP_EOL . '            ', $validation_rules) . '' . PHP_EOL . '        ]', $file_contents);
             file_put_contents(app_path('Http/Requests/' . $model_name . '/StoreOrUpdate' . '.php'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Requests/Dummy/Filter.php.tpl');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("return []", 'return [' . PHP_EOL . '            ' . implode(',' . PHP_EOL . '            ', str_replace(['required|','nullable|'],'',$validation_rules)) . '' . PHP_EOL . '        ]', $file_contents);
+            file_put_contents(app_path('Http/Requests/' . $model_name . '/Filter' . '.php'), $file_contents);
 
             //generate factory class
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyFactory.php.tpl');
@@ -457,9 +459,9 @@ class AutoGenerateModelCode extends Command
         if (strstr($column_type, 'tinyint(1)') != false)
             return "boolean";
         if (strstr($column_type, 'int') != false)
-            return "integer";
+            return "integer|max:4294967295";
         if (strstr($column_type, 'decimal') != false)
-            return "numeric";
+            return "numeric|between:0.01,999999";
 //        if(strstr($column_type,'varchar')!=false)
 //            return "alpha";
 //        if(strstr($column_type,'text')!=false)
@@ -478,7 +480,7 @@ class AutoGenerateModelCode extends Command
         if (strstr($column_type, 'int') != false)
             return "numberBetween(0,1000)";
         if (strstr($column_type, 'decimal') != false)
-            return "randomFloat(2)";
+            return "randomFloat(2,0.01,999999)";
         if(strstr($column_type,'varchar')!=false)
             return "word";
         if(strstr($column_type,'text')!=false)

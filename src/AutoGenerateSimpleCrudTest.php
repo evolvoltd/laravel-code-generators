@@ -145,7 +145,7 @@ class AutoGenerateSimpleCrudTest extends Command
         if (strstr($column_type, 'datetime') != false)
             return '$this->faker->dateTime->format("Y-m-d H:i:s")';
         if (strstr($column_type, 'date') != false)
-            return '$this->faker->date->format("Y-m-d")';
+            return '$this->faker->date()';
         if (strstr($column_type, 'timestamp') != false)
             return '$this->faker->dateTime->format("Y-m-d H:i:s")';
         return "";

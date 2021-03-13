@@ -39,11 +39,11 @@ class testClass extends TestCase
         $data = [
             update_data
         ];
-        $response = $this->json('put', url('api/route/' . $itemId), $data);
+        $response = $this->putJson(url('api/route/' . $itemId), $data);
         $response->assertStatus(200);
         $response->assertJson($data);
         //search
-        $response = $this->json('get', url('api/route/find/' . $data['name']));
+        $response = $this->getJson(url('api/route/find/' . $data['name']));
         $response->assertStatus(200);
         $response->assertJson(['data' => [[
             'name' => $data['name'],
