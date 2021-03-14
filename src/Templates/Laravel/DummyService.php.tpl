@@ -11,7 +11,7 @@ class DummiesService
     {
         //$query->orderByRaw('FIELD(status, "not_approved", "payment_pending", "payment_received", "discarded")');
 
-        $query = Dummy::with();
+        $query = Dummy::with([]);
 
         if($request->filled('id'))
             $query->where('id',$request->input('id'));
@@ -22,17 +22,17 @@ class DummiesService
     public function createDummy(Request $request)
     {
         dummyItem = Dummy::create($request->all());
-        return dummyItem->fresh()->load();
+        return dummyItem->fresh()->load([]);
     }
 
     public function updateDummy(Request $request, Dummy dummyItem)
     {
         dummyItem->update($request->all());
-        return dummyItem->load();
+        return dummyItem->load([]);
     }
 
     public function find($search)
     {
-        return (strlen($search) > 2) ? ["data" => Dummy::with()->where('name', 'LIKE', '%' . $search . '%')->limit(20)->get()] : [];
+        return (strlen($search) > 2) ? ["data" => Dummy::with([])->where('name', 'LIKE', '%' . $search . '%')->limit(20)->get()] : [];
     }
 }

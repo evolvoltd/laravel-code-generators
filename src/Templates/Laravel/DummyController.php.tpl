@@ -12,9 +12,9 @@ class DummyController extends Controller
 {
     private $dummyService;
 
-    public function __construct(ServiceName dummyService)
+    public function __construct(ServiceName $dummyService)
     {
-        $this->dummyService = dummyService;
+        $this->dummyService = $dummyService;
     }
 
     public function index(Filter $request)
