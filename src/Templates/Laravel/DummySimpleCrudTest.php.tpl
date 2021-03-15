@@ -11,7 +11,7 @@ class testClass extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $user = factory(User::class)->states('admin')->create();
+        $user = User::factory()->create(['role'=> User::USER_ROLE_ADMIN]);
         Passport::actingAs($user);
     }
     public function testTypesCRUD()
@@ -54,5 +54,39 @@ class testClass extends TestCase
         $response->assertStatus(200);
     }
 
-    //add index filtering tests
+    public function testListFiltering()
+    {
+        $item = dummy::factory()->create();
+
+        $this->getJson(url('api/route?search=' . $item->title))
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+
+        $this->getJson(url('api/route?search=' . Str::random()))
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson(url('api/route?status[]=' . $item->status))
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+        $this->getJson(url('api/route?status[]=' . array_values(array_diff(dummy::AVAILABLE_STATUSES, [$item->status]))[0]))
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson(url('api/route?date_from=' . (new Carbon($item->date))->subDay()->format('Y-m-d')))
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+        $this->getJson(url('api/route?date_from=' . (new Carbon($item->date))->addDay()->format('Y-m-d')))
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson(url('api/route?date_to=' . (new Carbon($item->date))->addDay()->format('Y-m-d')))
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+        $this->getJson(url('api/route?date_to=' . (new Carbon($item->date))->subDay()->format('Y-m-d')))
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+
+
+    }
 }

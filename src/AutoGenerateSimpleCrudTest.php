@@ -99,6 +99,7 @@ class AutoGenerateSimpleCrudTest extends Command
 
         $file_contents = str_replace("post_data", $fillable_fields, $file_contents);
         $file_contents = str_replace("update_data", $fillable_fields, $file_contents);
+        $file_contents = str_replace("dummy", $model_name, $file_contents);
 
         !file_exists(base_path('tests/Feature/' . $testName))?mkdir(base_path('tests/Feature/' . $testName)):null;
 

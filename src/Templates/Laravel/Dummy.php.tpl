@@ -2,11 +2,12 @@
 namespace App\Models;
 
 use App\Logic\Helpers\Traits\BootableTrait;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Dummy extends Model {
 
-    use BootableTrait;
+    use BootableTrait, HasFactory;
 
     const AVAILABLE_SELECTIONS = [
         "selection",

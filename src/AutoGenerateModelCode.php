@@ -71,7 +71,7 @@ class AutoGenerateModelCode extends Command
                 $fillable_columns[] = $value->Field;
 
                 $validation_rules[] = '"' . $value->Field . '" => "'.($value->Null==='YES'?'nullable':'required').'|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type) . '"';
-                $factory_attributes[] = '"' . $value->Field . '" => $faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
+                $factory_attributes[] = '"' . $value->Field . '" => $this->faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
                 $angular_model_attributes[] = $value->Field . ': ' . $this->convertDatabaseColumnTypeToAngularType($value->Type) . ';';
                 $table_headers[] = '<th>' . ucfirst($value->Field) . '</th>';
                 $table_columns[] = '<td>{{' . $singular_table_name . '.' . $value->Field . '}}</td>';
@@ -368,10 +368,10 @@ class AutoGenerateModelCode extends Command
             //generate crud route
             $route = str_replace('_', '-', $table);
             $file_contents = file_get_contents(base_path('routes/api.php'));
-            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name_plural . 'Controller\', [\'except\' => [\'show\']]);';
+            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, [\'except\' => [\'show\']]);';
 
             //generate find route
-            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', \'' . $model_name_plural . 'Controller@find\');';
+            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', [\\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, \'find\']);';
             file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
