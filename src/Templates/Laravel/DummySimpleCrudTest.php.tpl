@@ -1,6 +1,7 @@
 <?php
-namespace Tests\Feature;
+namespace Tests\Feature\Dummies;
 use App\Models\User;
+use App\Models\Dummy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Laravel\Passport\Passport;
@@ -56,7 +57,7 @@ class testClass extends TestCase
 
     public function testListFiltering()
     {
-        $item = dummy::factory()->create();
+        $item = Dummy::factory()->create();
 
         $this->getJson(url('api/route?search=' . $item->title))
             ->assertStatus(200)
@@ -69,7 +70,7 @@ class testClass extends TestCase
         $this->getJson(url('api/route?status[]=' . $item->status))
             ->assertStatus(200)
             ->assertJsonCount(1, 'data');
-        $this->getJson(url('api/route?status[]=' . array_values(array_diff(dummy::AVAILABLE_STATUSES, [$item->status]))[0]))
+        $this->getJson(url('api/route?status[]=' . array_values(array_diff(Dummy::AVAILABLE_STATUSES, [$item->status]))[0]))
             ->assertStatus(200)
             ->assertJsonCount(0, 'data');
 

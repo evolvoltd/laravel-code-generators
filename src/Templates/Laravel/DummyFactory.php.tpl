@@ -7,7 +7,7 @@ namespace Database\Factories;
 use App\Models\Dummy;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class UserFactory extends Factory
+class DummyFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
