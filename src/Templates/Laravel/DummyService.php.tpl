@@ -13,8 +13,11 @@ class DummiesService
 
         $query = Dummy::with([]);
 
-        if($request->filled('id'))
+        /*if($request->filled('id'))
             $query->where('id',$request->input('id'));
+
+        if(strlen($request->input('search'))>2)
+            $query->where('name', 'LIKE', '%'.$request->input('search').'%');*/
 
         return $query->paginate(50);
     }

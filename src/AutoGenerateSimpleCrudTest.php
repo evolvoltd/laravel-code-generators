@@ -141,7 +141,7 @@ class AutoGenerateSimpleCrudTest extends Command
         if (strstr($column_type, 'decimal') != false)
             return '$this->faker->randomFloat(2,0.01,999999)';
         if(strstr($column_type,'varchar')!=false)
-            return '$this->faker->word';
+            return 'Str::random()';
         if(strstr($column_type,'text')!=false)
             return '$this->faker->sentence';
         if (strstr($column_type, 'datetime') != false)

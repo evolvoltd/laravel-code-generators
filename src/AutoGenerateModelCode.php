@@ -462,10 +462,10 @@ class AutoGenerateModelCode extends Command
             return "integer|max:4294967295";
         if (strstr($column_type, 'decimal') != false)
             return "numeric|between:0.01,999999";
-//        if(strstr($column_type,'varchar')!=false)
-//            return "alpha";
-//        if(strstr($column_type,'text')!=false)
-//            return "alpha";
+        if(strstr($column_type,'varchar')!=false)
+            return "string";
+        if(strstr($column_type,'text')!=false)
+            return "string";
         if (strstr($column_type, 'date') != false)
             return "date";
         if (strstr($column_type, 'timestamp') != false)

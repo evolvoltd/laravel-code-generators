@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Dummy;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class DummyFactory extends Factory
 {
