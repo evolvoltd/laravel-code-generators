@@ -12,7 +12,7 @@
       :errors="dummyValidationErrors"
       :disabled="$store.getters.loading['post:api/dummykcs']"
       @clear:errors="CLEAR_DUMMY_VALIDATION_ERRORS"
-      @cancel="goBack"
+      @cancel="goToDummysPage"
       @save="onSave"
     />
   </v-dialog>
@@ -20,7 +20,7 @@
 
 <script>
 import { mapActions, mapMutations, mapState } from 'vuex';
-import DummyForm from '@/components/DummyForm';
+import DummyForm from '@/components/forms/DummyForm';
 
 export default {
   name: 'CreateDummy',
