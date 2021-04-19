@@ -1,5 +1,5 @@
 <template>
-  <v-form @submit.prevent="$emit('save', dummy)">
+  <v-form @submit.prevent>
     <v-card>
       <v-card-title>
         {{ formTitle }}
@@ -28,9 +28,9 @@
         <v-btn
           :disabled="disabled"
           :loading="disabled"
-          type="submit"
           color="primary"
           text
+          @click="$emit('save', dummy)"
         >
           {{ $t('save') }}
         </v-btn>
