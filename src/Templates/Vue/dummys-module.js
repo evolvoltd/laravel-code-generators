@@ -5,7 +5,7 @@ import i18n from '@/i18n/i18n-config';
 import { updateArrayItem, removeArrayItem } from '@/util/array';
 import { mapErrorsToInputs } from '@/util/forms';
 
-const getDefaultDummyFormItem = () => ({});
+export const getDefaultDummyFormItem = () => ({});
 
 export const getDefaultDummyFilterParams = () => ({});
 
@@ -13,9 +13,9 @@ const state = {
   dummys: null,
   dummyPagination: {},
   editedDummy: {},
+  newDummy: getDefaultDummyFormItem(),
   dummyValidationErrors: {},
   dummyFilterParams: getDefaultDummyFilterParams(),
-  newDummy: getDefaultDummyFormItem(),
 };
 
 const getters = {};
@@ -66,16 +66,11 @@ const mutations = {
 
 const actions = {
   fetchDummys({ commit }, params) {
-    return dummyService
-      .getPage(params)
-      .then((res) => {
-        commit('SET_DUMMYS', res.data);
-        if (params.page !== state.dummyFilterParams.page) {
-          window.scrollTo(0, 0);
-        }
-        commit('SET_DUMMY_FILTER_PARAMS', params);
-        return res.data;
-      });
+    commit('SET_DUMMY_FILTER_PARAMS', params);
+    return dummyService.getPage(params).then((res) => {
+      commit('SET_DUMMYS', res.data);
+      return res.data;
+    });
   },
 
   storeDummy({ commit }, dummy) {
@@ -116,10 +111,6 @@ const actions = {
         commit('SET_DUMMY_VALIDATION_ERRORS', mapErrorsToInputs(err));
         throw err;
       });
-  },
-
-  clearDummyValidationErrors({ commit }, field) {
-    commit('CLEAR_DUMMY_VALIDATION_ERRORS', field);
   },
 
   deleteDummy({ commit }, dummy) {
