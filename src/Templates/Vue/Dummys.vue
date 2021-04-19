@@ -11,6 +11,12 @@
       />
     </div>
 
+    <DummyFilter
+      :filter-params="dummyFilterParams"
+      @change="$router.push({ name: 'dummys', query: $event })"
+      @reset="resetDummyFilters"
+    />
+
     <BaseTableLoader :loading="!dummys">
       <DummyTable
         :items="dummys"
@@ -30,7 +36,9 @@
 import { mapActions, mapState } from 'vuex';
 import BaseTableLoader from '@/components/base/BaseTableLoader';
 import BasePrimaryActionButton from '@/components/base/BasePrimaryActionButton';
-import DummyTable from '@/components/DummyTable';
+import DummyTable from '@/components/tables/DummyTable';
+import DummyFilter from '@/components/filters/DummyFilter';
+import { getDefaultDummyFilterParams } from '@/store/modules/dummykcs-module';
 
 export default {
   name: 'Dummys',
@@ -39,6 +47,7 @@ export default {
     BaseTableLoader,
     BasePrimaryActionButton,
     DummyTable,
+    DummyFilter,
   },
 
   computed: mapState('dummys', [
@@ -67,6 +76,14 @@ export default {
     onPageChange(page) {
       const query = { ...this.dummyFilterParams, page };
       this.$router.push({ name: 'dummys', query });
+    },
+
+    resetDummyFilters() {
+      const defaultFilters = getDefaultDummyFilterParams();
+      if (JSON.stringify(defaultFilters) === JSON.stringify(this.dummyFilterParams)) {
+        return;
+      }
+      this.$router.push({ name: 'dummys', query: defaultFilters });
     },
   },
 };

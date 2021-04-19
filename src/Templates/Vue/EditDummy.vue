@@ -11,7 +11,7 @@
       :disabled="$store.getters.loading[`put:api/dummykcs/${editedDummy.id}`]"
       :errors="dummyValidationErrors"
       :dummykc="editedDummy"
-      @clear:errors="clearDummyValidationErrors"
+      @clear:errors="CLEAR_DUMMY_VALIDATION_ERRORS"
       @cancel="goToDummysPage"
       @save="onSave"
     />
@@ -21,7 +21,7 @@
 <script>
 import { mapActions, mapMutations, mapState } from 'vuex';
 import store from '@/store';
-import DummyForm from '@/components/DummyForm';
+import DummyForm from '@/components/forms/DummyForm';
 
 export default {
   name: 'EditDummy',
