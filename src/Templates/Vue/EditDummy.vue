@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex';
+import { mapActions, mapMutations, mapState } from 'vuex';
 import store from '@/store';
 import DummyForm from '@/components/DummyForm';
 
@@ -28,7 +28,9 @@ export default {
 
   components: { DummyForm },
 
-  computed: mapState('dummys', ['editedDummy', 'dummyValidationErrors', 'dummyFilterParams']),
+  computed: {
+    ...mapState('dummys', ['editedDummy', 'dummyValidationErrors', 'dummyFilterParams']),
+  },
 
   beforeRouteEnter(to, from, next) {
     store
@@ -42,11 +44,12 @@ export default {
   },
 
   methods: {
-    ...mapActions('dummys', ['updateDummy', 'clearDummyValidationErrors']),
+    ...mapActions('dummys', ['updateDummy']),
+    ...mapMutations('dummys', ['CLEAR_DUMMY_VALIDATION_ERRORS']),
 
     onSave(dummy) {
       this.updateDummy(dummy).then(() => {
-        this.$router.push({ name: 'dummys', query: this.dummyFilterParams });
+        this.goToDummysPage();
       });
     },
 

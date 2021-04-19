@@ -11,15 +11,15 @@
       :dummykc="newDummy"
       :errors="dummyValidationErrors"
       :disabled="$store.getters.loading['post:api/dummykcs']"
-      @clear:errors="clearDummyValidationErrors"
-      @cancel="goToDummysPage"
+      @clear:errors="CLEAR_DUMMY_VALIDATION_ERRORS"
+      @cancel="goBack"
       @save="onSave"
     />
   </v-dialog>
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex';
+import { mapActions, mapMutations, mapState } from 'vuex';
 import DummyForm from '@/components/DummyForm';
 
 export default {
@@ -29,8 +29,13 @@ export default {
 
   computed: mapState('dummys', ['newDummy', 'dummyValidationErrors', 'dummyFilterParams']),
 
+  created() {
+    this.SET_DUMMY_VALIDATION_ERRORS({});
+  },
+
   methods: {
-    ...mapActions('dummys', ['storeDummy', 'clearDummyValidationErrors']),
+    ...mapActions('dummys', ['storeDummy']),
+    ...mapMutations('dummys', ['SET_DUMMY_VALIDATION_ERRORS', 'CLEAR_DUMMY_VALIDATION_ERRORS']),
 
     onSave(dummy) {
       this.storeDummy(dummy).then(() => {
