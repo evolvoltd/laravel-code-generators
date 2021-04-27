@@ -27,7 +27,9 @@ export default {
 
   components: { DummyForm },
 
-  computed: mapState('dummys', ['newDummy', 'dummyValidationErrors', 'dummyFilterParams']),
+  computed: {
+    ...mapState('dummys', ['newDummy', 'dummyValidationErrors', 'dummyFilterParams']),
+  },
 
   created() {
     this.SET_DUMMY_VALIDATION_ERRORS({});
