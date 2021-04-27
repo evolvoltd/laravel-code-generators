@@ -40,7 +40,7 @@ const mutations = {
   },
 
   STORE_DUMMY(state, dummy) {
-    state.dummys = [...state.dummys, dummy];
+    state.dummys.push(dummy);
     state.dummyPagination.total += 1;
     state.dummyValidationErrors = {};
     state.newDummy = getDefaultDummyFormItem();
