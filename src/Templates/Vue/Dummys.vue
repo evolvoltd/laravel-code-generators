@@ -50,11 +50,9 @@ export default {
     DummyFilter,
   },
 
-  computed: mapState('dummys', [
-    'dummys',
-    'dummyPagination',
-    'dummyFilterParams',
-  ]),
+  computed: {
+    ...mapState('dummys', ['dummys', 'dummyPagination', 'dummyFilterParams']),
+  },
 
   created() {
     this.fetchDummys(this.$route.query);

@@ -200,9 +200,29 @@ class AutoGenerateModelCode extends Command
             $table_in_kebab_case = $this->toKebabCase($table);
             $table_in_pascal_case = $this->toPascalCase($table);
 
-            $dir = app_path('Console/Commands/Output/Vue/');
-            if (!file_exists($dir)) {
-                mkdir($dir, 0777, true);
+            $formsDir = app_path('Console/Commands/Output/Vue/components/forms');
+            if (!file_exists($formsDir)) {
+                mkdir($formsDir, 0777, true);
+            }
+            $tablesDir = app_path('Console/Commands/Output/Vue/components/tables');
+            if (!file_exists($tablesDir)) {
+                mkdir($tablesDir, 0777, true);
+            }
+            $filtersDir = app_path('Console/Commands/Output/Vue/components/filters');
+            if (!file_exists($filtersDir)) {
+                mkdir($filtersDir, 0777, true);
+            }
+            $apiDir = app_path('Console/Commands/Output/Vue/api');
+            if (!file_exists($apiDir)) {
+                mkdir($apiDir, 0777, true);
+            }
+            $storeModulesDir = app_path('Console/Commands/Output/Vue/store/modules');
+            if (!file_exists($storeModulesDir)) {
+                mkdir($storeModulesDir, 0777, true);
+            }
+            $viewDir = app_path('Console/Commands/Output/Vue/views/' . $table_in_kebab_case);
+            if (!file_exists($viewDir)) {
+                mkdir($viewDir, 0777, true);
             }
 
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/DummyForm.vue');
@@ -282,7 +302,7 @@ class AutoGenerateModelCode extends Command
                 '"confirm_' . $singular_table_name . '_delete": ""';
             $file_contents = file_get_contents(__DIR__ . '/Templates/Vue/translations.json');
             $file_contents = str_replace("VUE_TRANSLATIONS", $vue_translations, $file_contents);
-            file_put_contents(app_path('Console/Commands/Output/Vue/' . $table_in_kebab_case . '/translations.json'), $file_contents);
+            file_put_contents(app_path('Console/Commands/Output/Vue/' . $model_in_kebab_case . '-translations.json'), $file_contents);
 
         } else {
             //GENERATE BACK-END CODE START
