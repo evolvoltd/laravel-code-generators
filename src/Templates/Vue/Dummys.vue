@@ -17,24 +17,21 @@
       @reset="resetDummyFilters"
     />
 
-    <BaseTableLoader :loading="!dummys">
-      <DummyTable
-        :items="dummys"
-        :loading="$store.getters.loading['get:api/dummykcs']"
-        :pagination="dummyPagination"
-        @delete="deleteDummy"
-        @edit="$router.push({ name: 'editDummy', params: { id: $event.id } })"
-        @update:page="onPageChange"
-      />
-    </BaseTableLoader>
+    <DummyTable
+      :items="dummys"
+      :loading="$store.getters.loading['get:api/dummykcs']"
+      :pagination="dummyPagination"
+      @delete="deleteDummy"
+      @edit="$router.push({ name: 'editDummy', params: { id: $event.id } })"
+      @update:page="onPageChange"
+    />
 
-    <router-view/>
+    <router-view />
   </div>
 </template>
 
 <script>
 import { mapActions, mapState } from 'vuex';
-import BaseTableLoader from '@/components/base/BaseTableLoader';
 import BasePrimaryActionButton from '@/components/base/BasePrimaryActionButton';
 import DummyTable from '@/components/tables/DummyTable';
 import DummyFilter from '@/components/filters/DummyFilter';
@@ -44,7 +41,6 @@ export default {
   name: 'Dummys',
 
   components: {
-    BaseTableLoader,
     BasePrimaryActionButton,
     DummyTable,
     DummyFilter,

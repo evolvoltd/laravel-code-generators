@@ -2,14 +2,15 @@
   <v-data-table
     :expanded="tableMixin_expandedRows"
     :footer-props="{
-      'items-per-page-options': [pagination.per_page],
+      'items-per-page-options': [pagination.per_page || 50],
     }"
     :headers="tableMixin_displayedHeaders"
     :items="items"
     :mobile-breakpoint="0"
-    :page="pagination.current_page"
-    :server-items-length="pagination.total"
+    :page="pagination.current_page || 1"
+    :server-items-length="pagination.total || -1"
     :class="{ 'content-loading': loading }"
+    :loading="loading"
     disable-sort
     @click:row="tableMixin_onRowClick"
     @update:page="tableMixin_changePage"

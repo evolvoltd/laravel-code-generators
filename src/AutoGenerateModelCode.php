@@ -94,7 +94,7 @@ class AutoGenerateModelCode extends Command
                     $vue_form_data_attributes = $vue_form_data_attributes .
                         $object_field . 'SearchFunction: ' . $object_field . 'Service.search,' . PHP_EOL;
 
-                    $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field);
                     $is_vue_autocomplete_imported = true;
                 } else if ($value->Type === 'date') {
                     if (!$is_vue_datepicker_imported) {
@@ -103,16 +103,16 @@ class AutoGenerateModelCode extends Command
                         $vue_form_components = $vue_form_components .
                             'BaseDatepickerInput,' . PHP_EOL;
                     }
-                    $vue_form_fields[] = $this->getVueDateField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueDateField($value->Field);
                     $is_vue_datepicker_imported = true;
                 } else if ($value->Type === 'tinyint(1)') {
-                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field);
                 } else if ($value->Type === 'text') {
-                    $vue_form_fields[] = $this->getVueTextArea($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueTextArea($value->Field);
                 } else if ((strstr($value->Type, 'int') || strstr($value->Type, 'decimal') || strstr($value->Type, 'float'))) {
-                    $vue_form_fields[] = $this->getVueNumberField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueNumberField($value->Field);
                 } else {
-                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueTextField($value->Field);
                 }
 
                 if ($column_index === 0) {
@@ -535,14 +535,12 @@ class AutoGenerateModelCode extends Command
         return "";
     }
 
-    private function getVueTextField(string $field, string $singular_table_name): string
+    private function getVueTextField(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         $result =
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-text-field' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
         $result = $result .
@@ -554,14 +552,12 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueNumberField(string $field, string $singular_table_name): string
+    private function getVueNumberField(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         $result =
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-text-field' . PHP_EOL .
-            'v-model.number="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model.number="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
         $result = $result .
@@ -574,14 +570,12 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueTextArea(string $field, string $singular_table_name): string
+    private function getVueTextArea(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         $result =
             '<v-col cols="12">' . PHP_EOL .
             '<v-textarea' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
         $result = $result .
@@ -595,14 +589,13 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueAutocompleteField(string $id_field, string $object_field, string $singular_table_name): string
+    private function getVueAutocompleteField(string $id_field, string $object_field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
         $result =
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<BaseAutocomplete' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $id_field . '"' . PHP_EOL .
-            ':initial-item="' . $form_item_name . '.' . $object_field . '"' . PHP_EOL .
+            'v-model="item.' . $id_field . '"' . PHP_EOL .
+            ':initial-item="item.' . $object_field . '"' . PHP_EOL .
             ':search-function="' . $object_field . 'SearchFunction"' . PHP_EOL .
             ':error-messages="errors.' . $id_field . '"' . PHP_EOL .
             ':label="$t(\'' . $object_field . '\')"' . PHP_EOL .
@@ -616,14 +609,12 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueCheckboxField(string $field, string $singular_table_name): string
+    private function getVueCheckboxField(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         $result =
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-checkbox' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
         $result = $result .
@@ -635,14 +626,12 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueDateField(string $field, string $singular_table_name): string
+    private function getVueDateField(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         return
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<BaseDatepickerInput' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
             '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
