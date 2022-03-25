@@ -6,20 +6,20 @@ use App\Models\Dummy;
 use Illuminate\Http\Request;
 use App\Services\ServiceName;
 use App\Http\Requests\Dummy\StoreOrUpdate;
+use App\Http\Requests\Dummy\Filter;
 
 class DummyController extends Controller
 {
     private $dummyService;
 
-    public function __construct(ServiceName dummyItemService)
+    public function __construct(ServiceName $dummyService)
     {
-        $this->dummyService = dummyItemService;
+        $this->dummyService = $dummyService;
     }
 
-    public function index(Request $request)
+    public function index(Filter $request)
     {
-        $dummiesQuery = $this->dummyService->dummiesQuery($request);
-        return  $dummiesQuery;
+        return $this->dummyService->listDummies($request);
     }
 
     public function show(Dummy dummyItem)
@@ -30,16 +30,14 @@ class DummyController extends Controller
 
     public function store(StoreOrUpdate $request)
     {
-        dummyItem = $this->dummyService->createDummy($request);
-        return dummyItem;
+        return $this->dummyService->createDummy($request);
     }
 
     public function update(StoreOrUpdate $request, Dummy dummyItem)
     {
         //$this->authorize('update', dummyItem);
 
-        dummyItem = $this->dummyService->updateDummy($request,dummyItem);
-        return dummyItem;
+        return $this->dummyService->updateDummy($request,dummyItem);
     }
 
     public function destroy(Dummy dummyItem)
@@ -51,8 +49,7 @@ class DummyController extends Controller
 
     public function find($search)
     {
-        $dummies = $this->dummyService->find($search);
-        return  $dummies;
+        return $this->dummyService->find($search);
     }
 
 }

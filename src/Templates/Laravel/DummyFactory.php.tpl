@@ -2,9 +2,28 @@
 
 /** @var Factory $factory */
 
-use Faker\Generator as Faker;
-use Illuminate\Database\Eloquent\Factory;
+namespace Database\Factories;
 
-$factory->define(App\Models\Dummy::class, function (Faker $faker) {
-    return [];
-});
+use App\Models\Dummy;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
+
+class DummyFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = Dummy::class;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
+    {
+        return [];
+    }
+}

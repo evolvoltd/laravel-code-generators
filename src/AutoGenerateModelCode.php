@@ -71,7 +71,7 @@ class AutoGenerateModelCode extends Command
                 $fillable_columns[] = $value->Field;
 
                 $validation_rules[] = '"' . $value->Field . '" => "'.($value->Null==='YES'?'nullable':'required').'|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type) . '"';
-                $factory_attributes[] = '"' . $value->Field . '" => $faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
+                $factory_attributes[] = '"' . $value->Field . '" => $this->faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
                 $angular_model_attributes[] = $value->Field . ': ' . $this->convertDatabaseColumnTypeToAngularType($value->Type) . ';';
                 $table_headers[] = '<th>' . ucfirst($value->Field) . '</th>';
                 $table_columns[] = '<td>{{' . $singular_table_name . '.' . $value->Field . '}}</td>';
@@ -94,7 +94,7 @@ class AutoGenerateModelCode extends Command
                     $vue_form_data_attributes = $vue_form_data_attributes .
                         $object_field . 'SearchFunction: ' . $object_field . 'Service.search,' . PHP_EOL;
 
-                    $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueAutocompleteField($value->Field, $object_field);
                     $is_vue_autocomplete_imported = true;
                 } else if ($value->Type === 'date') {
                     if (!$is_vue_datepicker_imported) {
@@ -103,16 +103,16 @@ class AutoGenerateModelCode extends Command
                         $vue_form_components = $vue_form_components .
                             'BaseDatepickerInput,' . PHP_EOL;
                     }
-                    $vue_form_fields[] = $this->getVueDateField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueDateField($value->Field);
                     $is_vue_datepicker_imported = true;
                 } else if ($value->Type === 'tinyint(1)') {
-                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueCheckboxField($value->Field);
                 } else if ($value->Type === 'text') {
-                    $vue_form_fields[] = $this->getVueTextArea($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueTextArea($value->Field);
                 } else if ((strstr($value->Type, 'int') || strstr($value->Type, 'decimal') || strstr($value->Type, 'float'))) {
-                    $vue_form_fields[] = $this->getVueNumberField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueNumberField($value->Field);
                 } else {
-                    $vue_form_fields[] = $this->getVueTextField($value->Field, $singular_table_name);
+                    $vue_form_fields[] = $this->getVueTextField($value->Field);
                 }
 
                 if ($column_index === 0) {
@@ -374,9 +374,7 @@ class AutoGenerateModelCode extends Command
             //generate service
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyService.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("DummiesService", $model_name_plural . 'Service', $file_contents);
-            $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
-            $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
+            $file_contents = str_replace("Dummies", $model_name_plural , $file_contents);
             $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
             file_put_contents(app_path('Services/' . $model_name_plural . 'Service' . '.php'), $file_contents);
 
@@ -386,30 +384,34 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("DummyController", $model_name_plural . 'Controller', $file_contents);
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummyService", lcfirst($model_name_plural) . "Service", $file_contents);
-            $file_contents = str_replace("dummies", lcfirst($model_name_plural) . "", $file_contents);
-            $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name_plural), $file_contents);
+            $file_contents = str_replace("Dummies", $model_name_plural . "", $file_contents);
+            $file_contents = str_replace("dummyItem", '$' . lcfirst($model_name), $file_contents);
             $file_contents = str_replace("ServiceName", $model_name_plural .'Service', $file_contents);
             file_put_contents(app_path('Http/Controllers/' . $model_name_plural . 'Controller' . '.php'), $file_contents);
 
             //generate crud route
             $route = str_replace('_', '-', $table);
             $file_contents = file_get_contents(base_path('routes/api.php'));
-            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \'' . $model_name_plural . 'Controller\');';
-            // file_put_contents(base_path('routes/api.php'), $file_contents);
+            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, [\'except\' => [\'show\']]);';
 
             //generate find route
-            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', \'' . $model_name_plural . 'Controller@find\');';
+            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', [\\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, \'find\']);';
             file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
             if (!file_exists($dir)) {
                 mkdir($dir, 0777, true);
             }
-            //generate request class
+            //generate request classes
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Requests/Dummy/StoreOrUpdate.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("return []", 'return [' . PHP_EOL . '            ' . implode(',' . PHP_EOL . '            ', $validation_rules) . '' . PHP_EOL . '        ]', $file_contents);
             file_put_contents(app_path('Http/Requests/' . $model_name . '/StoreOrUpdate' . '.php'), $file_contents);
+
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Requests/Dummy/Filter.php.tpl');
+            $file_contents = str_replace("Dummy", $model_name, $file_contents);
+            $file_contents = str_replace("return []", 'return [' . PHP_EOL . '            ' . implode(',' . PHP_EOL . '            ', str_replace(['required|','nullable|'],'',$validation_rules)) . '' . PHP_EOL . '        ]', $file_contents);
+            file_put_contents(app_path('Http/Requests/' . $model_name . '/Filter' . '.php'), $file_contents);
 
             //generate factory class
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyFactory.php.tpl');
@@ -481,13 +483,13 @@ class AutoGenerateModelCode extends Command
         if (strstr($column_type, 'tinyint(1)') != false)
             return "boolean";
         if (strstr($column_type, 'int') != false)
-            return "integer";
+            return "integer|max:4294967295";
         if (strstr($column_type, 'decimal') != false)
-            return "numeric";
-//        if(strstr($column_type,'varchar')!=false)
-//            return "alpha";
-//        if(strstr($column_type,'text')!=false)
-//            return "alpha";
+            return "numeric|between:0.01,999999";
+        if(strstr($column_type,'varchar')!=false)
+            return "string";
+        if(strstr($column_type,'text')!=false)
+            return "string";
         if (strstr($column_type, 'date') != false)
             return "date";
         if (strstr($column_type, 'timestamp') != false)
@@ -502,7 +504,7 @@ class AutoGenerateModelCode extends Command
         if (strstr($column_type, 'int') != false)
             return "numberBetween(0,1000)";
         if (strstr($column_type, 'decimal') != false)
-            return "randomFloat(2)";
+            return "randomFloat(2,0.01,999999)";
         if(strstr($column_type,'varchar')!=false)
             return "word";
         if(strstr($column_type,'text')!=false)
@@ -533,14 +535,12 @@ class AutoGenerateModelCode extends Command
         return "";
     }
 
-    private function getVueTextField(string $field, string $singular_table_name): string
+    private function getVueTextField(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         $result =
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-text-field' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
         $result = $result .
@@ -552,14 +552,12 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueNumberField(string $field, string $singular_table_name): string
+    private function getVueNumberField(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         $result =
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-text-field' . PHP_EOL .
-            'v-model.number="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model.number="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
         $result = $result .
@@ -572,14 +570,12 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueTextArea(string $field, string $singular_table_name): string
+    private function getVueTextArea(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         $result =
             '<v-col cols="12">' . PHP_EOL .
             '<v-textarea' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
         $result = $result .
@@ -593,14 +589,13 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueAutocompleteField(string $id_field, string $object_field, string $singular_table_name): string
+    private function getVueAutocompleteField(string $id_field, string $object_field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
         $result =
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<BaseAutocomplete' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $id_field . '"' . PHP_EOL .
-            ':initial-item="' . $form_item_name . '.' . $object_field . '"' . PHP_EOL .
+            'v-model="item.' . $id_field . '"' . PHP_EOL .
+            ':initial-item="item.' . $object_field . '"' . PHP_EOL .
             ':search-function="' . $object_field . 'SearchFunction"' . PHP_EOL .
             ':error-messages="errors.' . $id_field . '"' . PHP_EOL .
             ':label="$t(\'' . $object_field . '\')"' . PHP_EOL .
@@ -614,14 +609,12 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueCheckboxField(string $field, string $singular_table_name): string
+    private function getVueCheckboxField(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         $result =
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<v-checkbox' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL;
 
         $result = $result .
@@ -633,14 +626,12 @@ class AutoGenerateModelCode extends Command
         return $result;
     }
 
-    private function getVueDateField(string $field, string $singular_table_name): string
+    private function getVueDateField(string $field): string
     {
-        $form_item_name = $this->toCamelCase($singular_table_name);
-
         return
             '<v-col cols="12" sm="6">' . PHP_EOL .
             '<BaseDatepickerInput' . PHP_EOL .
-            'v-model="' . $form_item_name . '.' . $field . '"' . PHP_EOL .
+            'v-model="item.' . $field . '"' . PHP_EOL .
             ':error-messages="errors[\'' . $field . '\']"' . PHP_EOL .
             ':label="$t(\'' . $field . '\')"' . PHP_EOL .
             '@input="formMixin_clearErrors(\'' . $field . '\')"' . PHP_EOL .
