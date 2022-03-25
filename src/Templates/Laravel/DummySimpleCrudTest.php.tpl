@@ -19,7 +19,7 @@ class testClass extends TestCase
     public function testTypesCRUD()
     {
         // test validation
-        $response = $this->json('post', url('api/route'), []);
+        $response = $this->postJson(url('api/route'), []);
         $response->assertStatus(422);
         // create
         $data = [
@@ -28,7 +28,7 @@ class testClass extends TestCase
         $response = $this->postJson(url('api/route'), $data);
         $response->assertStatus(200);
         $response->assertJson($data);
-        $itemId = $response->decodeResponseJson()["id"];
+        $itemId = $response->json("id");
         //get single
         /*$response = $this->getJson(url('api/route/' . $itemId));
         $response->assertStatus(200);
@@ -52,7 +52,7 @@ class testClass extends TestCase
         ]]]);
         $response->assertJsonCount(1, 'data');
         //
-        $response = $this->deleteJson(url('api/route/' . $itemId), $data);
+        $response = $this->deleteJson(url('api/route/' . $itemId));
         $response->assertStatus(200);
     }
 

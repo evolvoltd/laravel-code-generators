@@ -61,31 +61,29 @@ class AutoGenerateSwaggerDoc extends Command
             }
 
             $idParameter =
-' *          @OA\Parameter(
+'*      @OA\Parameter(
  *          name="' . lcfirst($model_name) . '",
- *          description="' . ucfirst(str_replace('_', ' ',$table)) . ' ID",
+ *          description="' . ucfirst(str_replace('_', ' ',$singular_table_name)) . ' ID",
  *          required=true,
  *          in="path",
  *          @OA\Schema(
  *              type="integer"
  *          )
- *      ),
- ';
+ *      ),';
             $parameters = '';
             foreach ($columns as $value) {
                 if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'])) {
 
                     $parameters .=
- '*          @OA\Parameter(
- *          name="' . $value->Field . '",
- *          description="' . $value->Field . '",
- *          required=true,
- *          in="query",
- *          @OA\Schema(
- *              type="' . $this->getSwaggerParamType($value->Type) . '"
- *          )
- *      ),
- ';
+ '*      @OA\Parameter(
+  *          name="' . $value->Field . '",
+  *          description="' . $value->Field . '",
+  *          required=true,
+  *          in="query",
+  *          @OA\Schema(
+  *              type="' . $this->getSwaggerParamType($value->Type) . '"
+  *          )
+  *      ),';
                 }
             }
 
