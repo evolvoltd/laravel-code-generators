@@ -10,7 +10,7 @@ export const getDefaultDummyFormItem = () => ({});
 export const getDefaultDummyFilterParams = () => ({});
 
 const state = {
-  dummys: null,
+  dummys: [],
   dummyPagination: {},
   editedDummy: {},
   newDummy: getDefaultDummyFormItem(),
