@@ -45,6 +45,7 @@ class AutoGenerateModelCode extends Command
         $boolean_columns = [];
         $validation_rules = [];
         $factory_attributes = [];
+        $modelClassUsages = [];
         $table_headers = [];
         $table_columns = [];
         $angular_model_attributes = [];
@@ -62,6 +63,7 @@ class AutoGenerateModelCode extends Command
         $column_index = 0;
         $singular_table_name = Str::singular($table);
         $model_name = str_replace('_', '', ucwords($singular_table_name, '_'));
+
         $model_name_plural = Str::plural($model_name);
         $model_in_camel_case = $this->toCamelCase($singular_table_name);
         $model_in_kebab_case = $this->toKebabCase($singular_table_name);
@@ -70,8 +72,17 @@ class AutoGenerateModelCode extends Command
             if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by'])) {
                 $fillable_columns[] = $value->Field;
 
-                $validation_rules[] = '"' . $value->Field . '" => "'.($value->Null==='YES'?'nullable':'required').'|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type) . '"';
-                $factory_attributes[] = '"' . $value->Field . '" => $this->faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
+                $validation_rules[] = '"' . $value->Field . '" => "'.($value->Null==='YES'?'nullable':'required').'|' . $this->convertDatabaseColumnTypeToValidationRule($value->Type, $value->Field) . '"';
+                if (strstr($value->Type, 'int') != false) {
+                    if (Str::endsWith($value->Field, '_id')) {
+                        $attributeModelName = str_replace('_', '', ucwords(substr($value->Field, 0, -3), '_'));
+                        $factory_attributes[] = '"' . $value->Field . '" => ' . $attributeModelName . '::factory()';
+                        $modelClassUsages[] = 'use App\\Models\\' . $attributeModelName . ';';
+                    }
+                    else
+                        $factory_attributes[] = '"' . $value->Field . '" => $this->faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
+                } else
+                    $factory_attributes[] = '"' . $value->Field . '" => $this->faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
                 $angular_model_attributes[] = $value->Field . ': ' . $this->convertDatabaseColumnTypeToAngularType($value->Type) . ';';
                 $table_headers[] = '<th>' . ucfirst($value->Field) . '</th>';
                 $table_columns[] = '<td>{{' . $singular_table_name . '.' . $value->Field . '}}</td>';
@@ -392,10 +403,10 @@ class AutoGenerateModelCode extends Command
             //generate crud route
             $route = str_replace('_', '-', $table);
             $file_contents = file_get_contents(base_path('routes/api.php'));
-            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, [\'except\' => [\'show\']]);';
+            $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class);';
 
             //generate find route
-            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', [\\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, \'find\']);';
+            $file_contents .= "\n" . '//Route::get(\'' . $route .'/find/{search}'. '\', [\\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, \'find\']);';
             file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
@@ -416,7 +427,8 @@ class AutoGenerateModelCode extends Command
             //generate factory class
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummyFactory.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
-            $file_contents = str_replace("return []", 'return [' . PHP_EOL . '        ' . implode(',' . PHP_EOL . '        ', $factory_attributes) . '' . PHP_EOL . '    ]', $file_contents);
+            $file_contents = str_replace("return []", 'return [' . PHP_EOL . '            ' . implode(',' . PHP_EOL . '            ', $factory_attributes) . '' . PHP_EOL . '        ]', $file_contents);
+            $file_contents = str_replace("//modelClassUsages", implode(PHP_EOL, $modelClassUsages).PHP_EOL, $file_contents);
             file_put_contents(base_path('database/factories/' . $model_name . 'Factory' . '.php'), $file_contents);
 
             $dir = app_path('Logic/Helpers/Traits');
@@ -445,6 +457,7 @@ class AutoGenerateModelCode extends Command
                 'table' => $table
             ]
         );
+        Artisan::call('l5-swagger:generate');
         $this->info("Swagger doc created!");
         // }
 
@@ -478,22 +491,27 @@ class AutoGenerateModelCode extends Command
 
     }
 
-    private function convertDatabaseColumnTypeToValidationRule($column_type)
+    private function convertDatabaseColumnTypeToValidationRule($column_type, $field_name = null)
     {
         if (strstr($column_type, 'tinyint(1)') != false)
             return "boolean";
-        if (strstr($column_type, 'int') != false)
+        if (strstr($column_type, 'int') != false) {
+            if (is_string($field_name) && Str::endsWith($field_name, '_id'))
+                return "integer|exists:" . substr($field_name, 0, -3) . "s,id";
             return "integer|max:4294967295";
+        }
         if (strstr($column_type, 'decimal') != false)
             return "numeric|between:0.01,999999";
         if(strstr($column_type,'varchar')!=false)
             return "string";
         if(strstr($column_type,'text')!=false)
-            return "string";
+            return "string|max:50000";
+        if (strstr($column_type, 'datetime') != false)
+            return "date_format:Y-m-d H:i:s";
         if (strstr($column_type, 'date') != false)
-            return "date";
+            return "date_format:Y-m-d";
         if (strstr($column_type, 'timestamp') != false)
-            return "date";
+            return "date_format:Y-m-d H:i:s";
         return "";
     }
 
@@ -509,6 +527,8 @@ class AutoGenerateModelCode extends Command
             return "word";
         if(strstr($column_type,'text')!=false)
             return "sentence";
+        if (strstr($column_type, 'datetime') != false)
+            return "dateTime";
         if (strstr($column_type, 'date') != false)
             return "date";
         if (strstr($column_type, 'timestamp') != false)

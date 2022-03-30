@@ -1,7 +1,9 @@
 <?php
 namespace Tests\Feature\Dummies;
+
 use App\Models\User;
 use App\Models\Dummy;
+//modelClassUsages
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Str;
@@ -19,7 +21,7 @@ class testClass extends TestCase
     public function testTypesCRUD()
     {
         // test validation
-        $response = $this->postJson(url('api/route'), []);
+        $response = $this->json('post', url('api/route'), []);
         $response->assertStatus(422);
         // create
         $data = [
@@ -28,11 +30,11 @@ class testClass extends TestCase
         $response = $this->postJson(url('api/route'), $data);
         $response->assertStatus(200);
         $response->assertJson($data);
-        $itemId = $response->json("id");
+        $itemId = $response->decodeResponseJson()["id"];
         //get single
-        /*$response = $this->getJson(url('api/route/' . $itemId));
+        $response = $this->getJson(url('api/route/' . $itemId));
         $response->assertStatus(200);
-        $response->assertJson($data);*/
+        $response->assertJson($data);
         //get all
         $response = $this->getJson(url('api/route'));
         $response->assertStatus(200);
@@ -45,12 +47,12 @@ class testClass extends TestCase
         $response->assertStatus(200);
         $response->assertJson($data);
         //search
-        $response = $this->getJson(url('api/route/find/' . $data['name']));
+        /*$response = $this->getJson(url('api/route/find/' . $data['name']));
         $response->assertStatus(200);
         $response->assertJson(['data' => [[
             'name' => $data['name'],
         ]]]);
-        $response->assertJsonCount(1, 'data');
+        $response->assertJsonCount(1, 'data');*/
         //
         $response = $this->deleteJson(url('api/route/' . $itemId));
         $response->assertStatus(200);

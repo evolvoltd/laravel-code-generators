@@ -49,6 +49,7 @@ class AutoGenerateSimpleCrudTest extends Command
 
         $testName = $model_name_plural;
         $route = str_replace('_', '-', $table);
+        $modelClassUsages = [];
 
 
         $fillable_fields = '';
@@ -78,7 +79,7 @@ class AutoGenerateSimpleCrudTest extends Command
                 if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'])) {
                     $fillable_columns[] = $value->Field;
 
-                    $collumn_values[] = $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
+                    $collumn_values[] = $this->convertDatabaseColumnTypeToFakerFunction($value->Type, $value->Field, $modelClassUsages);
 
 
                 }
@@ -93,6 +94,7 @@ class AutoGenerateSimpleCrudTest extends Command
 
         //generate test
         $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummySimpleCrudTest.php.tpl');
+        $file_contents = str_replace("//modelClassUsages", implode(PHP_EOL, $modelClassUsages), $file_contents);
         $file_contents = str_replace("testClass",$testName . 'Test', $file_contents);
         $file_contents = str_replace("api/route", "api/" . $route, $file_contents);
 
@@ -132,10 +134,20 @@ class AutoGenerateSimpleCrudTest extends Command
         return "";
     }
 
-    private function convertDatabaseColumnTypeToFakerFunction($column_type)
+    private function convertDatabaseColumnTypeToFakerFunction($column_type, $field_name, &$modelClassUsages)
     {
         if (strstr($column_type, 'tinyint(1)') != false)
             return '$this->faker->boolean';
+
+        if (strstr($column_type, 'int') != false) {
+                    if (Str::endsWith($field_name, '_id')) {
+                        $attributeModelName = str_replace('_', '', ucwords(substr($field_name, 0, -3), '_'));
+                        $modelClassUsages[] = 'use App\\Models\\' . $attributeModelName . ';';
+                        return $attributeModelName . '::factory()->create()->id';
+                    }
+                    else
+                        return '$this->faker->numberBetween(0,1000)';
+                }
         if (strstr($column_type, 'int') != false)
             return '$this->faker->numberBetween(0,1000)';
         if (strstr($column_type, 'decimal') != false)
