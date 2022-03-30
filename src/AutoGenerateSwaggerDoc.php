@@ -61,32 +61,32 @@ class AutoGenerateSwaggerDoc extends Command
             }
 
             $idParameter =
-'*      @OA\Parameter(
+' *      @OA\Parameter(
  *          name="' . lcfirst($model_name) . '",
- *          description="' . ucfirst(str_replace('_', ' ',$singular_table_name)) . ' ID",
+ *          description="' . ucfirst(str_replace('_', ' ',$table)) . ' ID",
  *          required=true,
  *          in="path",
  *          @OA\Schema(
  *              type="integer"
  *          )
  *      ),';
-            $parameters = '';
+            $parameters = [];
             foreach ($columns as $value) {
                 if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'])) {
 
-                    $parameters .=
- '*      @OA\Parameter(
-  *          name="' . $value->Field . '",
-  *          description="' . $value->Field . '",
-  *          required=true,
-  *          in="query",
-  *          @OA\Schema(
-  *              type="' . $this->getSwaggerParamType($value->Type) . '"
-  *          )
-  *      ),';
+                    $parameters[] =
+ ' *      @OA\Parameter(
+ *          name="' . $value->Field . '",
+ *          description="' . $value->Field . '",
+ *          required=true,
+ *          in="query",
+ *          @OA\Schema(
+ *              type="' . $this->getSwaggerParamType($value->Type) . '"
+ *          )
+ *      ),';
                 }
             }
-
+            $parameters = implode(PHP_EOL, $parameters);
             //generate swagger documentation
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummySwagger.php.tpl');
             $file_contents = str_replace("[#'uri'#]", $route, $file_contents);
@@ -97,7 +97,7 @@ class AutoGenerateSwaggerDoc extends Command
             $file_contents = str_replace("[#'id_parameter'#]", $idParameter, $file_contents);
 
             !file_exists(base_path('tests/api-docs/'))?mkdir(base_path('tests/api-docs/')):null;
-            
+
             file_put_contents(base_path('tests/api-docs/' . Str::plural($model_name) . '.php'), $file_contents);
 
             $this->info($swaggerName . " swagger doc created!");
