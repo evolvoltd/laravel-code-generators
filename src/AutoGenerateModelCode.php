@@ -524,7 +524,7 @@ class AutoGenerateModelCode extends Command
         if (strstr($column_type, 'decimal') != false)
             return "randomFloat(2,0.01,999999)";
         if(strstr($column_type,'varchar')!=false)
-            return "word";
+            return 'Str::random()';
         if(strstr($column_type,'text')!=false)
             return "sentence";
         if (strstr($column_type, 'datetime') != false)
