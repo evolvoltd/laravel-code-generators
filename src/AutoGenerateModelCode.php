@@ -80,9 +80,9 @@ class AutoGenerateModelCode extends Command
                         $modelClassUsages[] = 'use App\\Models\\' . $attributeModelName . ';';
                     }
                     else
-                        $factory_attributes[] = '"' . $value->Field . '" => $this->faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
+                        $factory_attributes[] = '"' . $value->Field . '" => ' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
                 } else
-                    $factory_attributes[] = '"' . $value->Field . '" => $this->faker->' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
+                    $factory_attributes[] = '"' . $value->Field . '" => ' . $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
                 $angular_model_attributes[] = $value->Field . ': ' . $this->convertDatabaseColumnTypeToAngularType($value->Type) . ';';
                 $table_headers[] = '<th>' . ucfirst($value->Field) . '</th>';
                 $table_columns[] = '<td>{{' . $singular_table_name . '.' . $value->Field . '}}</td>';
@@ -517,22 +517,23 @@ class AutoGenerateModelCode extends Command
 
     private function convertDatabaseColumnTypeToFakerFunction($column_type)
     {
+        $prefix = '$this->faker->';
         if (strstr($column_type, 'tinyint(1)') != false)
-            return "boolean";
+            return $prefix."boolean";
         if (strstr($column_type, 'int') != false)
-            return "numberBetween(0,1000)";
+            return $prefix."numberBetween(0,1000)";
         if (strstr($column_type, 'decimal') != false)
-            return "randomFloat(2,0.01,999999)";
+            return $prefix."randomFloat(2,0.01,999999)";
         if(strstr($column_type,'varchar')!=false)
             return 'Str::random()';
         if(strstr($column_type,'text')!=false)
-            return "sentence";
+            return $prefix."sentence";
         if (strstr($column_type, 'datetime') != false)
-            return "dateTime";
+            return $prefix."dateTime";
         if (strstr($column_type, 'date') != false)
-            return "date";
+            return $prefix."date";
         if (strstr($column_type, 'timestamp') != false)
-            return "dateTime";
+            return $prefix."dateTime";
         return "";
     }
 
