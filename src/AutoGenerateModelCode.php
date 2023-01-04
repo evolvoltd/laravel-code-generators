@@ -476,12 +476,12 @@ class AutoGenerateModelCode extends Command
         );
         $this->info("Tests created!");
 
-        if(in_array('swagger:generate', Artisan::all())) {
+        if(array_key_exists('swagger:generate', Artisan::all())) {
             Artisan::call('swagger:generate');
             $this->info("Swagger doc created!");
         }
 
-        if(in_array('l5-swagger:generate', Artisan::all())) {
+        if(array_key_exists('l5-swagger:generate', Artisan::all())) {
             Artisan::call('generate:swagger',
                 [
                     'table' => $table
