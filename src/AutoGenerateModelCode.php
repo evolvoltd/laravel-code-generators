@@ -467,13 +467,8 @@ class AutoGenerateModelCode extends Command
             //generate find FormRequest
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Requests/Find.php.tpl');
             file_put_contents(app_path('Http/Requests/Find.php'), $file_contents);
-
-
-
         }
 
-        // if ($this->confirm('Create tests for generated CRUD?')) {
-        //if($this->option('simple-crud-test')){
         Artisan::call('simple-crud-test',
             [
                 'table' => $table
@@ -481,23 +476,23 @@ class AutoGenerateModelCode extends Command
         );
         $this->info("Tests created!");
 
+        if(in_array('swagger:generate', Artisan::all())) {
+            Artisan::call('swagger:generate');
+            $this->info("Swagger doc created!");
+        }
 
-        Artisan::call('generate:swagger',
-            [
-                'table' => $table
-            ]
-        );
-        Artisan::call('l5-swagger:generate');
-        $this->info("Swagger doc created!");
-        // }
-
-
+        if(in_array('l5-swagger:generate', Artisan::all())) {
+            Artisan::call('generate:swagger',
+                [
+                    'table' => $table
+                ]
+            );
+            Artisan::call('l5-swagger:generate');
+            $this->info("Swagger doc created!");
+        }
 
 
         $this->info("Code generated succesfully!");
-        //generate policy
-        //put policy to policies list
-
 
         //GENERATE BACK-END CODE END
 
