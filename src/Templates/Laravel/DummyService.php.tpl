@@ -2,40 +2,46 @@
 namespace App\Services;
 
 use App\Models\Dummy;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Http\FormRequest;
 
 
 class DummiesService
 {
-    public function listDummies(Request $request)
+    public function listDummies(FormRequest $request)
     {
-        //$query->orderByRaw('FIELD(status, "not_approved", "payment_pending", "payment_received", "discarded")');
+        $query = Dummy::query();//with([]);
 
-        $query = Dummy::with([]);
+        /*if($request->id)
+        $query->where('id',$request->id);
 
-        /*if($request->filled('id'))
-            $query->where('id',$request->input('id'));
+        if($request->search)
+        $query->where('name', 'LIKE', '%'.$request->search.'%');
 
-        if(strlen($request->input('search'))>2)
-            $query->where('name', 'LIKE', '%'.$request->input('search').'%');*/
+        if($request->statuses)
+        $query->whereIn('status', $request->statuses);
+
+        $query->orderByRaw('FIELD(status, "status_1", "status_2", "status_3")');*/
 
         return $query->paginate(50);
     }
 
-    public function createDummy(Request $request)
+    public function createDummy(FormRequest $request)
     {
         dummyItem = Dummy::create($request->all());
-        return dummyItem->fresh()->load([]);
+        return dummyItem->fresh();//->load([]);
     }
 
-    public function updateDummy(Request $request, Dummy dummyItem)
+    public function updateDummy(FormRequest $request, Dummy dummyItem)
     {
         dummyItem->update($request->all());
-        return dummyItem->load([]);
+        return dummyItem;//->load([]);
     }
 
-    public function find($search)
+    public function find(FormRequest $request)
     {
-        return (strlen($search) > 2) ? ["data" => Dummy::with([])->where('name', 'LIKE', '%' . $search . '%')->limit(20)->get()] : [];
+        return ["data" => Dummy::where(function($q) use ($request) {
+            foreach (Dummy::SEARCHABLE_ATTRIBUTES as $searchableAttribute)
+            $q->orWhere($searchableAttribute, 'LIKE', '%' . $request->search . '%');
+        })->limit(20)->get()];
     }
 }

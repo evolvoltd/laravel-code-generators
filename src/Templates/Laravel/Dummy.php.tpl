@@ -1,17 +1,17 @@
 <?php
 namespace App\Models;
 
+
 use App\Logic\Helpers\Traits\BootableTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+//[RELATED_MODEL_IMPORTS]
 
 class Dummy extends Model {
 
     use BootableTrait, HasFactory;
 
-    const AVAILABLE_SELECTIONS = [
-        "selection",
-    ];
+    const SEARCHABLE_ATTRIBUTES = [];
 
     protected $hidden = [
         'created_at',

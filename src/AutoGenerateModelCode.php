@@ -17,14 +17,14 @@ class AutoGenerateModelCode extends Command
      *
      * @var string
      */
-    protected $signature = 'scaffold {database_table} {--only-ng} {--only-vue} {--tr} {--no-t} {--simple-crud-test}';
+    protected $signature = 'scaffold {database_table} {--vue} {--angular} ';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Auto generate all related files model files for backend and front end';
+    protected $description = 'Auto generate code using only database table structure for Laravel, Vue or Angular';
 
     /**
      * Execute the console command.
@@ -43,6 +43,8 @@ class AutoGenerateModelCode extends Command
         $columns = DB::select('show columns from ' . $table);
         $fillable_columns = [];
         $boolean_columns = [];
+        $searchableAttributes = [];
+        $relatedAttributes = [];
         $validation_rules = [];
         $factory_attributes = [];
         $modelClassUsages = [];
@@ -138,12 +140,17 @@ class AutoGenerateModelCode extends Command
                 $column_index++;
             }
 
-            if ($value->Type == 'tinyint(1)') {
+            if (preg_match('/name|title/i', $value->Field))
+                $searchableAttributes[] = $value->Field;
+
+            if ($value->Type == 'tinyint(1)')
                 $boolean_columns[] = $value->Field;
-            }
+
+            if (Str::endsWith($value->Field, '_id'))
+                $relatedAttributes[] = $value->Field;
         }
 
-        if ($this->option('only-ng')) {
+        if ($this->option('angular')) {
             $dir = app_path('Console/Commands/Output/Angular/' . $table . '/');
             if (!file_exists($dir)) {
                 mkdir($dir, 0777, true);
@@ -206,7 +213,7 @@ class AutoGenerateModelCode extends Command
             $file_contents = str_replace("dummy", $singular_table_name, $file_contents);
             file_put_contents(app_path('Console/Commands/Output/Angular/' . $table . '/app-routing.module.ts'), $file_contents);
 
-        } else if ($this->option('only-vue')) {
+        } else if ($this->option('vue')) {
             $vue_table_headers = $vue_table_headers . '{' . PHP_EOL . 'value: \'actions\',' . PHP_EOL . '},' . PHP_EOL;
             $table_in_kebab_case = $this->toKebabCase($table);
             $table_in_pascal_case = $this->toPascalCase($table);
@@ -325,9 +332,26 @@ class AutoGenerateModelCode extends Command
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Dummy.php.tpl');
             $file_contents = str_replace("Dummy", $model_name, $file_contents);
             $file_contents = str_replace("dummy", $table, $file_contents);
+            $file_contents = str_replace("SEARCHABLE_ATTRIBUTES = []", 'SEARCHABLE_ATTRIBUTES = [' . PHP_EOL . '        "' . implode('",' . PHP_EOL . '        "', $searchableAttributes) . '"' . PHP_EOL . '    ]', $file_contents);
             $file_contents = str_replace("fillable = []", 'fillable = [' . PHP_EOL . '        "' . implode('",' . PHP_EOL . '        "', $fillable_columns) . '"' . PHP_EOL . '    ]', $file_contents);
             $file_contents = str_replace("casts = []", 'casts = [' . PHP_EOL . '        "' . implode('" => "boolean",' . PHP_EOL . '        "', $boolean_columns) . '" => "boolean"' . PHP_EOL . '    ]', $file_contents);
             file_put_contents(app_path('Models/' . $model_name . '.php'), $file_contents);
+
+            if(count($relatedAttributes)) {
+
+                $replacement = '';
+                foreach ($relatedAttributes as $relatedAttribute) {
+
+                    $foreign_model_name = str_replace('_', '', ucwords(substr($relatedAttribute, 0, -3), '_'));
+                    $replacement .= "\n" . '    public function ' . lcfirst($foreign_model_name) . '()
+    {
+        return $this->hasOne(' . $foreign_model_name . '::class,\'id\',\'' . $relatedAttribute . '\');
+    }';
+                }
+                $file_contents = substr($file_contents, 0, -2) . $replacement . "\n}";
+            }
+            $file_contents = str_replace("//[RELATED_MODEL_IMPORTS]", implode("\n", $modelClassUsages), $file_contents);
+
             //generate model relations
             $migrationsDir = scandir(base_path('database/migrations'));
             foreach ($migrationsDir as $file) {
@@ -406,7 +430,7 @@ class AutoGenerateModelCode extends Command
             $file_contents .= "\n" . 'Route::apiResource(\'' . $route . '\', \\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class);';
 
             //generate find route
-            $file_contents .= "\n" . '//Route::get(\'' . $route .'/find/{search}'. '\', [\\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, \'find\']);';
+            $file_contents .= "\n" . 'Route::get(\'' . $route .'/find/{search}'. '\', [\\App\\Http\\Controllers\\' . $model_name_plural . 'Controller::class, \'find\']);';
             file_put_contents(base_path('routes/api.php'), $file_contents);
 
             $dir = app_path('Http/Requests/' . $model_name . '/');
@@ -440,6 +464,12 @@ class AutoGenerateModelCode extends Command
             $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Traits/DummyBootableTrait.php.tpl');
             file_put_contents(app_path('Logic/Helpers/Traits/BootableTrait.php'), $file_contents);
 
+            //generate find FormRequest
+            $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/Requests/Find.php.tpl');
+            file_put_contents(app_path('Http/Requests/Find.php'), $file_contents);
+
+
+
         }
 
         // if ($this->confirm('Create tests for generated CRUD?')) {
@@ -462,25 +492,7 @@ class AutoGenerateModelCode extends Command
         // }
 
 
-//        if(!$this->option('no-t')  && !$this->option('simple-crud-test')) {
-//            Artisan::call('generate:test',
-//                [
-//                    'table' => $table
-//                ]
-//            );
-//            if ($this->option('tr')) {
-//                Artisan::call('generate:test-response',
-//                    [
-//                        'path/test_name' => $model_name . '/' . $model_name . 'Test'
-//                    ]
-//                );
-//            }
-//            $this->info("Tests created!");
-//        }
 
-
-
-        // }
 
         $this->info("Code generated succesfully!");
         //generate policy
@@ -503,7 +515,7 @@ class AutoGenerateModelCode extends Command
         if (strstr($column_type, 'decimal') != false)
             return "numeric|between:0.01,999999";
         if(strstr($column_type,'varchar')!=false)
-            return "string";
+            return "string|max:150";
         if(strstr($column_type,'text')!=false)
             return "string|max:50000";
         if (strstr($column_type, 'datetime') != false)
