@@ -69,12 +69,6 @@ class AutoGenerateSimpleCrudTest extends Command
             }
 
             $fillable_columns = [];
-            $boolean_columns = [];
-            $validation_rules = [];
-            $table_headers = [];
-            $table_columns = [];
-            $angular_model_attributes = [];
-            $form_fields = [];
             foreach ($columns as $value) {
                 if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'])) {
                     $fillable_columns[] = $value->Field;
@@ -84,7 +78,6 @@ class AutoGenerateSimpleCrudTest extends Command
 
                 }
             }
-
 
             foreach (array_combine($fillable_columns, $collumn_values) as $field => $value) {
                 $pieces[] = '"' . $field . '"' . ' => ' . $value . ', ';
@@ -112,26 +105,6 @@ class AutoGenerateSimpleCrudTest extends Command
 
         $this->info($testName . " test template created!");
 
-
-    }
-
-    private function getStoreData($column_type)
-    {
-        if (strstr($column_type, 'tinyint(1)') != false)
-            return 1;
-        if (strstr($column_type, 'int') != false)
-            return 1;
-        if (strstr($column_type, 'decimal') != false)
-            return 1;
-        if (strstr($column_type, 'varchar') != false)
-            return "'alpha'";
-        if (strstr($column_type, 'text') != false)
-            return "'alpha'";
-        if (strstr($column_type, 'date') != false)
-            return "'" . Carbon::now() . "'";
-        if (strstr($column_type, 'timestamp') != false)
-            return "'" . Carbon::now() . "'";
-        return "";
     }
 
     private function convertDatabaseColumnTypeToFakerFunction($column_type, $field_name, &$modelClassUsages)
@@ -142,7 +115,8 @@ class AutoGenerateSimpleCrudTest extends Command
         if (strstr($column_type, 'int') != false) {
                     if (Str::endsWith($field_name, '_id')) {
                         $attributeModelName = str_replace('_', '', ucwords(substr($field_name, 0, -3), '_'));
-                        $modelClassUsages[] = 'use App\\Models\\' . $attributeModelName . ';';
+                        if($attributeModelName!='User')
+                            $modelClassUsages[] = 'use App\\Models\\' . $attributeModelName . ';';
                         return $attributeModelName . '::factory()->create()->id';
                     }
                     else
