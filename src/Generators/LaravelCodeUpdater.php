@@ -85,8 +85,12 @@ class LaravelCodeUpdater
                 $search = $matches[0];
 
                 foreach ($tableAttributes as $tableAttribute)
-                    if (!str_contains($requestFileContents, '"' . $tableAttribute->Field . '"'))
-                        $insert .= "\t\t\t" . LaravelConverter::convertDatabaseColumnTypeToValidationRule($tableAttribute).  ",\n";
+                    if (!str_contains($requestFileContents, '"' . $tableAttribute->Field . '"')) {
+                        $validationRules = LaravelConverter::convertDatabaseColumnTypeToValidationRule($tableAttribute);
+                        if(Str::startsWith($file->getRelativePathname(), ['Store', 'Update']))
+                            $insert .= "\t\t\t" . $validationRules . ",\n";
+                        else $insert .= "\t\t\t" . str_replace(['required|', 'nullable|'], '', $validationRules) . ",\n";
+                    }
 
                 if ($insert != '') {
                     if (!Str::endsWith($search, "\n")) {
