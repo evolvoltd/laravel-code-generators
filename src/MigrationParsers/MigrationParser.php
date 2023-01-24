@@ -15,9 +15,9 @@ class MigrationParser
         $batch = DB::table('migrations')->max('batch');
         $newMigrations = DB::table('migrations')->where('batch', $batch)->get();
         foreach ($newMigrations as $newMigration) {
-            $migrtionFilePath = base_path() . '/database/migrations/' . $newMigration->migration . '.php';
-            if(!File::exists($migrtionFilePath)) continue;
-            $migrationFileContents = File::get($migrtionFilePath);
+            $migrationFilePath = base_path() . '/database/migrations/' . $newMigration->migration . '.php';
+            if(!File::exists($migrationFilePath)) continue;
+            $migrationFileContents = File::get($migrationFilePath);
 
             //todo: refactor to get all tables in up method in single regex
             $upMethodMatches = [];
@@ -30,38 +30,20 @@ class MigrationParser
                 //todo: refactor to simplify - extracting table name with something like this /Schema::table\(['"](.*?)['"],/g to get rit of
                 //also extract multilple tables
 
-                $singleQuotes = true;
-                preg_match("/(Schema::table\(').+?(?=')/" , $tableUpdates, $tableLine);
-                if (!array_key_exists(0, $tableLine))
-                {
-                    preg_match("/(Schema::table\(\").+?(?=\")/" , $tableUpdates, $tableLine);
-                    $singleQuotes = false;
-                }
+                preg_match("/Schema::table\(['\"](.*?)['\"],/" , $tableUpdates, $tableLine);
                 $tableLine = $tableLine[0];
-                if ($singleQuotes) $table = explode("'", $tableLine)[1];
-                else $table = explode('"', $tableLine)[1];
+                $table = preg_split('/["\']/', $tableLine)[1];
 
                 //todo: change regex to match single and double quotes in single check
                 //todo: refactor - change regex not to match table->dropColumn, table->index and other not related methods
                 // refer to Illuminate\Database\Schema\Blueprint to whitelist methods that shouldbe matched, renames included
-                $singleQuotes2 = false;
-                preg_match_all("/(table->).+?(?=\"\))/", $tableUpdates, $tableAttributesUnparsed);
-                if ($tableAttributesUnparsed[0] == [])
-                {
-                    preg_match_all("/(table->).+?(?=\'\))/", $tableUpdates, $tableAttributesUnparsed);
-                    $singleQuotes2 = true;
-                }
-
+                preg_match_all("/(table->(renameColumn|integer|float|boolean|id|char|string|text|unsignedBigInteger|double|decimal|json|date|dateTime|time)\().+?(?=[\"']\))/", $tableUpdates, $tableAttributesUnparsed);
                 $tableAttributes = [];
                 foreach ($tableAttributesUnparsed[0] as $tableAttributeUnparsed)
                 {
-                    if ($singleQuotes2) $tableAttributeName = explode("'", $tableAttributeUnparsed)[1];
-                    else $tableAttributeName = explode('"', $tableAttributeUnparsed)[1];
-                    $tableAttributes[] = $tableAttributeName;
+                    $tableAttributes[] = preg_split('/["\']/', $tableAttributeUnparsed)[1];
                 }
                 //end refactor section
-
-
 
                 $tableAttributes = collect(DB::select('show columns from ' . $table))
                     ->filter(function($column) use ($tableAttributes){

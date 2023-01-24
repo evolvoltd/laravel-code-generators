@@ -19,7 +19,7 @@ class LaravelConverter
             if (strstr($column_type, 'tinyint(1)') != false)
                 $validationRules = "boolean";
         }
-        if (strstr($column_type, 'decimal') != false)
+        if (strstr($column_type, 'decimal') != false || strstr($column_type, 'float') != false || strstr($column_type, 'double'))
             $validationRules = "numeric|between:0.01,999999";
         if(strstr($column_type,'varchar')!=false)
             $validationRules = "string|max:150";
@@ -47,7 +47,7 @@ class LaravelConverter
             if (strstr($column_type, 'tinyint(1)') != false)
                 $fakerFunction =  $prefix."boolean";
         }
-        if (strstr($column_type, 'decimal') != false)
+        if (strstr($column_type, 'decimal') != false || strstr($column_type, 'float') != false || strstr($column_type, 'double') != false)
             $fakerFunction =  $prefix."randomFloat(2,0.01,999999)";
         if(strstr($column_type,'varchar')!=false)
             $fakerFunction =  'Str::random()';
