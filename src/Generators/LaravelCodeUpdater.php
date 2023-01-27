@@ -17,6 +17,10 @@ class LaravelCodeUpdater
 {
     private string $modelName;
     private string $modelNamePlural;
+    private array $relationshipAttributes;
+    private array $booleanAttributes;
+    private string $insert;
+    private array $matches;
 
     public function __construct(private $databaseTableName,
                                 private $databaseTableColumns)
@@ -25,84 +29,171 @@ class LaravelCodeUpdater
         $this->modelNamePlural = Str::plural($this->modelName);
     }
 
-    public function updateCode() : void
+    public function updateCode(): void
     {
         $tableAttributes = $this->databaseTableColumns;
-        try { // todo: refactor to remove try-catches; also refactor to extract code to external function since it looks very similar for every file
-            $modelFileContents = File::get(base_path() . '/app/Models/' . $this->modelName . '.php');
-            $insert = '';
-            $matches = [];
-            preg_match("/(fillable = \[).+?(?=];)/s", $modelFileContents, $matches);
-            $search = $matches[0];
-            foreach ($tableAttributes as $tableAttribute)
-                if (!str_contains($modelFileContents, '"' . $tableAttribute->Field . '"'))
-                    $insert .= "\t\t\"" . $tableAttribute->Field . "\",\n";
+        // todo: refactor to remove try-catches; also refactor to extract code to external function since it looks very similar for every file
+        $modelFileContents = File::get(base_path() . '/app/Models/' . $this->modelName . '.php');
+        $this->resetVariables();
+        $this->booleanAttributes = [];
+        preg_match("/(fillable = \[).+?(?=];)/s", $modelFileContents, $this->matches);
+        $search = $this->matches[0];
+        $this->getInsertString($tableAttributes, $modelFileContents, 'model');
 
-            if ($insert != '') {
-                if (!Str::endsWith($search, "\n")) {
-                    $replace = rtrim($search) . ',' . "\n" . $insert;
-                } else {
-                    $replace = $search . $insert;
-                }
-
-                file_put_contents(base_path() . '/app/Models/' . $this->modelName . '.php', str_replace(',,', ',', str_replace($search, $replace, $modelFileContents)));
-            }
-        } catch (Exception $e) {
-            throwException($e);
+        if ($this->booleanAttributes != []) {
+            $modelFileContents = $this->insertCasts($modelFileContents);
         }
+
+        if ($this->insert != '') {
+            $replace = $this->getReplaceString($search);
+            if ($this->relationshipAttributes != []) {
+                $insertRelationships = '';
+                foreach ($this->relationshipAttributes as $relationshipAttribute) {
+                    $relationshipName = str::camel($relationshipAttribute->Field);
+                    $relationshipName = substr($relationshipName, 0, -2);
+                    $insertRelationships .= "\tpublic function " . $relationshipName . "()\n" . "\t{\n"
+                        . "\t" . 'return $this->hasOne(' . ucfirst($relationshipName) . "::class, 'id', '" . $relationshipAttribute->Field . "');\n" . "\t}\n\n";
+                }
+                $modelFileContents = strrev(preg_replace(strrev("/}/"), strrev($insertRelationships . "}"), strrev($modelFileContents), 1));
+            }
+
+            file_put_contents(base_path() . '/app/Models/' . $this->modelName . '.php', str_replace(',,', ',', str_replace($search, $replace, $modelFileContents)));
+        }
+
+
         $factoryName = $this->modelName . "Factory";
-        try {
-            $factoryFileContents = File::get(base_path() . '/database/factories/' . $factoryName . '.php');
+        $factoryFileContents = File::get(base_path() . '/database/factories/' . $factoryName . '.php');
 
-            $insert = '';
-            $matches = [];
-            preg_match("/(return \[).+?(?=];)/s", $factoryFileContents, $matches);
-            $search = $matches[0];
+        $this->resetVariables();
+        preg_match("/(return \[).+?(?=];)/s", $factoryFileContents, $this->matches);
+        $search = $this->matches[0];
+        $this->getInsertString($tableAttributes, $factoryFileContents, 'factory');
 
-            foreach ($tableAttributes as $tableAttribute)
-                if (!str_contains($factoryFileContents, '"' . $tableAttribute->Field . '"'))
-                    $insert .= "\t\t\t" . LaravelConverter::convertDatabaseColumnTypeToFakerFunction($tableAttribute).  ",\n";
+        $modelClassUsages = LaravelConverter::convertRelatedDatabaseColumnsToModelClassUsages($this->relationshipAttributes);
 
-            if ($insert != '') {
-                if (!Str::endsWith($search, "\n")) {
-                    $replace = rtrim($search) . ',' . "\n" . $insert;
-                } else {
-                    $replace = $search . $insert;
-                }
-                file_put_contents(base_path() . '/database/factories/' . $factoryName . '.php', str_replace(',,', ',', str_replace($search, $replace, $factoryFileContents)));
-            }
-        } catch (Exception $e) {
+        preg_match("/(namespace).+?(?=;).+?(?=use)/s", $factoryFileContents, $classUsages);
+
+        $insertModelClassUsages = '';
+        foreach ($modelClassUsages as $modelClassUsage) {
+            $insertModelClassUsages .= $modelClassUsage . "\n";
         }
 
-        try {
-            $requestFiles = File::allFiles(base_path() . '/app/Http/Requests/' . $this->modelName);
-            foreach ($requestFiles as $file) {
-                $requestFileContents = File::get(base_path() . '/app/Http/Requests/' . $this->modelName . "/" . $file->getRelativePathname());
+        $factoryFileContents = str_replace($classUsages[0], $classUsages[0] . $insertModelClassUsages, $factoryFileContents);
 
-                $insert = '';
-                $matches = [];
-                preg_match("/(return \[).+?(?=];)/s", $requestFileContents, $matches);
-                $search = $matches[0];
+        if ($this->insert != '') {
+            $replace = $this->getReplaceString($search);
+            file_put_contents(base_path() . '/database/factories/' . $factoryName . '.php', str_replace(',,', ',', str_replace($search, $replace, $factoryFileContents)));
+        }
 
-                foreach ($tableAttributes as $tableAttribute)
-                    if (!str_contains($requestFileContents, '"' . $tableAttribute->Field . '"')) {
-                        $validationRules = LaravelConverter::convertDatabaseColumnTypeToValidationRule($tableAttribute);
-                        if(Str::startsWith($file->getRelativePathname(), ['Store', 'Update']))
-                            $insert .= "\t\t\t" . $validationRules . ",\n";
-                        else $insert .= "\t\t\t" . str_replace(['required|', 'nullable|'], '', $validationRules) . ",\n";
-                    }
 
-                if ($insert != '') {
-                    if (!Str::endsWith($search, "\n")) {
-                        $replace = rtrim($search) . ',' . "\n" . $insert;
-                    } else {
-                        $replace = $search . $insert;
-                    }
+        $data = $this->getRequestFiles();
+        $requestFiles = $data[0];
+        $requestDirectoryName = $data[1];
+        foreach ($requestFiles as $file) {
+            $requestFileContents = File::get(base_path() . '/app/Http/Requests/' . $requestDirectoryName . "/" . $file->getRelativePathname());
 
-                    file_put_contents(base_path() . '/app/Http/Requests/' . $this->modelName . "/" . $file->getRelativePathname(), str_replace(',,', ',', str_replace($search, $replace, $requestFileContents)));
-                }
+            $this->resetVariables();
+            preg_match("/(return \[).+?(?=];)/s", $requestFileContents, $this->matches);
+            $search = $this->matches[0];
+            $this->getInsertString($tableAttributes, $requestFileContents, 'request', $file);
+
+            if ($this->insert != '') {
+                $replace = $this->getReplaceString($search);
+
+                file_put_contents(base_path() . '/app/Http/Requests/' . $requestDirectoryName . "/" . $file->getRelativePathname(), str_replace(',,', ',', str_replace($search, $replace, $requestFileContents)));
             }
-        } catch (Exception $e) {
+        }
+    }
+
+    public function getRequestFiles(): array
+    {
+        $requestFiles = [];
+        $requestDirectoryName = '';
+        if (file_exists(base_path() . '/app/Http/Requests/' . $this->modelName)) {
+            $requestFiles = File::allFiles(base_path() . '/app/Http/Requests/' . $this->modelName);
+            $requestDirectoryName = $this->modelName;
+        } else if (file_exists(base_path() . '/app/Http/Requests/' . $this->modelName . 's')) {
+            $requestFiles = File::allFiles(base_path() . '/app/Http/Requests/' . $this->modelName . 's');
+            $requestDirectoryName = $this->modelName . 's';
+        } else if (file_exists(base_path() . '/app/Http/Requests/' . $this->modelName . 'es')) {
+            $requestFiles = File::allFiles(base_path() . '/app/Http/Requests/' . $this->modelName . 'es');
+            $requestDirectoryName = $this->modelName . 'es';
+        } else if (file_exists(base_path() . '/app/Http/Requests/' . $this->modelName . 'ies')) {
+            $requestFiles = File::allFiles(base_path() . '/app/Http/Requests/' . $this->modelName . 'ies');
+            $requestDirectoryName = $this->modelName . 'ies';
+        }
+        return array($requestFiles, $requestDirectoryName);
+    }
+
+    public function getReplaceString(mixed $search): string
+    {
+        if (!Str::endsWith($search, "\n")) {
+            $replace = rtrim($search) . ',' . "\n" . $this->insert;
+        } else {
+            $replace = $search . $this->insert;
+        }
+        return $replace;
+    }
+
+    public function resetVariables(): void
+    {
+        $this->insert = '';
+        $this->matches = [];
+        $this->relationshipAttributes = [];
+    }
+
+    public function insertCasts(string $modelFileContents) : string
+    {
+        $insertCasts = '';
+        preg_match("/(casts = \[).*?(?=\];)/s", $modelFileContents, $casts);
+        if (!array_key_exists(0, $casts)) {
+            preg_match('/(fillable = \[).+?(\];)/s', $modelFileContents, $fillableForCasts);
+            $searchFillableForCasts = $fillableForCasts[0];
+            $modelFileContents = str_replace($searchFillableForCasts, $searchFillableForCasts . "\n\n\t" . 'protected $casts = [' . "\n" . '];' . "\n", $modelFileContents);
+            preg_match("/(casts = \[).+?(?=\];)/s", $modelFileContents, $casts);
+        }
+        $searchCasts = $casts[0];
+        foreach ($this->booleanAttributes as $booleanAttribute) {
+            $insertCasts .= "\t" . '"' . $booleanAttribute->Field . '" => "boolean",' . "\n";
+        }
+        $replaceCasts = rtrim($searchCasts) . ',' . $insertCasts;
+        $modelFileContents = str_replace($searchCasts, $replaceCasts, $modelFileContents);
+        $modelFileContents = str_replace('[,', '[', $modelFileContents);
+        return $modelFileContents;
+    }
+
+    public function getInsertString($tableAttributes, string $fileContents, string $type, $file = null): void
+    {
+        switch($type){
+            case('model'):
+                foreach ($tableAttributes as $tableAttribute)
+                    if (!str_contains($fileContents, '"' . $tableAttribute->Field . '"')) {
+                        $this->insert .= "\t\t\"" . $tableAttribute->Field . "\",\n";
+                        if (str_ends_with($tableAttribute->Field, '_id')) {
+                            $this->relationshipAttributes[] = $tableAttribute;
+                        }
+                        if ($tableAttribute->Type == "tinyint(1)") {
+                            $this->booleanAttributes[] = $tableAttribute;
+                        }
+                    };
+                break;
+            case('factory'):
+                foreach ($tableAttributes as $tableAttribute)
+                    if (!str_contains($fileContents, '"' . $tableAttribute->Field . '"')) {
+                        $this->insert .= "\t\t\t" . LaravelConverter::convertDatabaseColumnTypeToFakerFunction($tableAttribute) . ",\n";
+                        if (str_ends_with($tableAttribute->Field, '_id'))
+                            $this->relationshipAttributes[] = $tableAttribute->Field;
+                    }
+                break;
+            case('request'):
+                foreach ($tableAttributes as $tableAttribute)
+                    if (!str_contains($fileContents, '"' . $tableAttribute->Field . '"')) {
+                        $validationRules = LaravelConverter::convertDatabaseColumnTypeToValidationRule($tableAttribute);
+                        if (Str::startsWith($file->getRelativePathname(), ['Store', 'Update']))
+                            $this->insert .= "\t\t\t" . $validationRules . ",\n";
+                        else $this->insert .= "\t\t\t" . str_replace(['required|', 'nullable|'], '', $validationRules) . ",\n";
+                    }
+                break;
         }
     }
 }
