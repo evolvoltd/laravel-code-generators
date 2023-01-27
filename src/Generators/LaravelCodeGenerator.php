@@ -17,12 +17,12 @@ class LaravelCodeGenerator
 {
     private string $modelName;
     private string $modelNamePlural;
-    private array $fillableAttributes;
-    private array $searchableAttributes;
-    private array $booleanAttributes;
-    private array $validationRules;
-    private array $factoryAttributes;
-    private array $relatedAttributes;
+    private array $fillableAttributes = [];
+    private array $searchableAttributes = [];
+    private array $booleanAttributes = [];
+    private array $validationRules = [];
+    private array $factoryAttributes = [];
+    private array $relatedAttributes = [];
 
     public function __construct(private $databaseTableName,
                                 private $databaseTableColumns)
