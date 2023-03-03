@@ -89,18 +89,23 @@ class LaravelCodeUpdater
         $data = $this->getRequestFiles();
         $requestFiles = $data[0];
         $requestDirectoryName = $data[1];
+        /**
+         * @var \Symfony\Component\Finder\SplFileInfo $file
+         */
         foreach ($requestFiles as $file) {
-            $requestFileContents = File::get(base_path() . '/app/Http/Requests/' . $requestDirectoryName . "/" . $file->getRelativePathname());
+            if(in_array($file->getFilename(),['Filter.php', 'Store.php', 'Update.php', 'StoreOrUpdate.php'])) {
+                $requestFileContents = File::get(base_path() . '/app/Http/Requests/' . $requestDirectoryName . "/" . $file->getRelativePathname());
 
-            $this->resetVariables();
-            preg_match("/(return \[).+?(?=];)/s", $requestFileContents, $this->matches);
-            $search = $this->matches[0];
-            $this->getInsertString($tableAttributes, $requestFileContents, 'request', $file);
+                $this->resetVariables();
+                preg_match("/(return \[).+?(?=];)/s", $requestFileContents, $this->matches);
+                $search = $this->matches[0];
+                $this->getInsertString($tableAttributes, $requestFileContents, 'request', $file);
 
-            if ($this->insert != '') {
-                $replace = $this->getReplaceString($search);
+                if ($this->insert != '') {
+                    $replace = $this->getReplaceString($search);
 
-                file_put_contents(base_path() . '/app/Http/Requests/' . $requestDirectoryName . "/" . $file->getRelativePathname(), str_replace(',,', ',', str_replace($search, $replace, $requestFileContents)));
+                    file_put_contents(base_path() . '/app/Http/Requests/' . $requestDirectoryName . "/" . $file->getRelativePathname(), str_replace(',,', ',', str_replace($search, $replace, $requestFileContents)));
+                }
             }
         }
     }
