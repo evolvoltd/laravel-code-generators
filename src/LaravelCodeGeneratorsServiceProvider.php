@@ -33,6 +33,6 @@ class LaravelCodeGeneratorsServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->register(CommandListenerProvider::class);
     }
 }

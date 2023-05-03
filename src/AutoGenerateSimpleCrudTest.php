@@ -49,6 +49,7 @@ class AutoGenerateSimpleCrudTest extends Command
 
         $testName = $model_name_plural;
         $route = str_replace('_', '-', $table);
+        $modelClassUsages = [];
 
 
         $fillable_fields = '';
@@ -68,22 +69,15 @@ class AutoGenerateSimpleCrudTest extends Command
             }
 
             $fillable_columns = [];
-            $boolean_columns = [];
-            $validation_rules = [];
-            $table_headers = [];
-            $table_columns = [];
-            $angular_model_attributes = [];
-            $form_fields = [];
             foreach ($columns as $value) {
                 if (!in_array($value->Field, ['id', 'created_at', 'updated_at', 'created_by', 'updated_by'])) {
                     $fillable_columns[] = $value->Field;
 
-                    $collumn_values[] = $this->convertDatabaseColumnTypeToFakerFunction($value->Type);
+                    $collumn_values[] = $this->convertDatabaseColumnTypeToFakerFunction($value->Type, $value->Field, $modelClassUsages);
 
 
                 }
             }
-
 
             foreach (array_combine($fillable_columns, $collumn_values) as $field => $value) {
                 $pieces[] = '"' . $field . '"' . ' => ' . $value . ', ';
@@ -93,12 +87,15 @@ class AutoGenerateSimpleCrudTest extends Command
 
         //generate test
         $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/DummySimpleCrudTest.php.tpl');
+        $file_contents = str_replace("//modelClassUsages", implode(PHP_EOL, $modelClassUsages), $file_contents);
         $file_contents = str_replace("testClass",$testName . 'Test', $file_contents);
         $file_contents = str_replace("api/route", "api/" . $route, $file_contents);
 
 
         $file_contents = str_replace("post_data", $fillable_fields, $file_contents);
         $file_contents = str_replace("update_data", $fillable_fields, $file_contents);
+        $file_contents = str_replace("Dummy", $model_name, $file_contents);
+        $file_contents = str_replace("Dummies", $model_name_plural, $file_contents);
 
         !file_exists(base_path('tests/Feature/' . $testName))?mkdir(base_path('tests/Feature/' . $testName)):null;
 
@@ -108,44 +105,35 @@ class AutoGenerateSimpleCrudTest extends Command
 
         $this->info($testName . " test template created!");
 
-
     }
 
-    private function getStoreData($column_type)
-    {
-        if (strstr($column_type, 'tinyint(1)') != false)
-            return 1;
-        if (strstr($column_type, 'int') != false)
-            return 1;
-        if (strstr($column_type, 'decimal') != false)
-            return 1;
-        if (strstr($column_type, 'varchar') != false)
-            return "'alpha'";
-        if (strstr($column_type, 'text') != false)
-            return "'alpha'";
-        if (strstr($column_type, 'date') != false)
-            return "'" . Carbon::now() . "'";
-        if (strstr($column_type, 'timestamp') != false)
-            return "'" . Carbon::now() . "'";
-        return "";
-    }
-
-    private function convertDatabaseColumnTypeToFakerFunction($column_type)
+    private function convertDatabaseColumnTypeToFakerFunction($column_type, $field_name, &$modelClassUsages)
     {
         if (strstr($column_type, 'tinyint(1)') != false)
             return '$this->faker->boolean';
+
+        if (strstr($column_type, 'int') != false) {
+                    if (Str::endsWith($field_name, '_id')) {
+                        $attributeModelName = str_replace('_', '', ucwords(substr($field_name, 0, -3), '_'));
+                        if($attributeModelName!='User')
+                            $modelClassUsages[] = 'use App\\Models\\' . $attributeModelName . ';';
+                        return $attributeModelName . '::factory()->create()->id';
+                    }
+                    else
+                        return '$this->faker->numberBetween(0,1000)';
+                }
         if (strstr($column_type, 'int') != false)
             return '$this->faker->numberBetween(0,1000)';
         if (strstr($column_type, 'decimal') != false)
-            return '$this->faker->randomFloat(2)';
+            return '$this->faker->randomFloat(2,0.01,999999)';
         if(strstr($column_type,'varchar')!=false)
-            return '$this->faker->word';
+            return 'Str::random()';
         if(strstr($column_type,'text')!=false)
             return '$this->faker->sentence';
         if (strstr($column_type, 'datetime') != false)
             return '$this->faker->dateTime->format("Y-m-d H:i:s")';
         if (strstr($column_type, 'date') != false)
-            return '$this->faker->date->format("Y-m-d")';
+            return '$this->faker->date()';
         if (strstr($column_type, 'timestamp') != false)
             return '$this->faker->dateTime->format("Y-m-d H:i:s")';
         return "";

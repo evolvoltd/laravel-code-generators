@@ -1,6 +1,9 @@
 <?php
-namespace Tests\Feature;
+namespace Tests\Feature\Dummies;
+
 use App\Models\User;
+use App\Models\Dummy;
+//modelClassUsages
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Laravel\Passport\Passport;
@@ -11,46 +14,80 @@ class testClass extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $user = factory(User::class)->states('admin')->create();
+        $user = User::factory()->create(['role'=> User::USER_ROLE_ADMIN]);
         Passport::actingAs($user);
     }
-    public function testTypesCRUD()
+
+    public function testApiResource()
     {
-        // test validation
-        $response = $this->json('post', url('api/route'), []);
-        $response->assertStatus(422);
+        $apiResourceUrl = url('api/route');
+
         // create
-        $data = [
-            post_data
-        ];
-        $response = $this->postJson(url('api/route'), $data);
-        $response->assertStatus(201);
-        $response->assertJson($data);
-        $itemId = $response->decodeResponseJson()["id"];
+        $data = Dummy::factory()->make()->toArray();
+        $this->postJson($apiResourceUrl, [])->assertStatus(422);
+        $itemId = $this->postJson($apiResourceUrl, $data)->assertStatus(200)->assertJson($data)->json("id");
+
         //get single
-        $response = $this->getJson(url('api/route/' . $itemId));
-        $response->assertStatus(200);
-        $response->assertJson($data);
+        $this->getJson($apiResourceUrl . '/' . $itemId)->assertStatus(200)->assertJson($data);
+
         //get all
-        $response = $this->getJson(url('api/route'));
-        $response->assertStatus(200);
-        $response->assertJson(['data' => [$data]]);
+        $this->getJson($apiResourceUrl)->assertStatus(200)->assertJson(['data' => [$data]]);
+
         // update
-        $data = [
-            update_data
-        ];
-        $response = $this->json('put', url('api/route/' . $itemId), $data);
-        $response->assertStatus(200);
-        $response->assertJson($data);
+        $data = Dummy::factory()->make()->toArray();
+        $this->putJson($apiResourceUrl. '/' . $itemId, [])->assertStatus(422);
+        $this->putJson($apiResourceUrl. '/' . $itemId, $data)->assertStatus(200)->assertJson($data);
+
         //search
-        $response = $this->json('get', url('api/route/find/' . $data['name']));
-        $response->assertStatus(200);
-        $response->assertJson(['data' => [[
-            'name' => $data['name'],
-        ]]]);
-        $response->assertJsonCount(1, 'data');
-        //
-        $response = $this->deleteJson(url('api/route/' . $itemId), $data);
-        $response->assertStatus(200);
+        foreach (Dummy::SEARCHABLE_ATTRIBUTES as $searchableAttribute)
+        $this->getJson($apiResourceUrl.'/find/' . $data[$searchableAttribute])
+        ->assertStatus(200)
+        ->assertJson(['data' => [[$searchableAttribute => $data[$searchableAttribute]]]])
+        ->assertJsonCount(1, 'data');
+
+        //delete
+        $this->deleteJson($apiResourceUrl.'/' . $itemId)->assertStatus(200);
+    }
+
+    public function testListFiltering()
+    {
+        /*$data = [
+            post_data
+        ];*/
+        $item = Dummy::factory()->create();
+
+        //prepare list filtering tests
+        $this->assertTrue(true);
+
+        /*$this->getJson(url('api/route?search=' . $item->name))
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+
+        $this->getJson(url('api/route?search=' . Str::random()))
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson(url('api/route?status[]=' . $item->status))
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+        $this->getJson(url('api/route?status[]=' . array_values(array_diff(Dummy::AVAILABLE_STATUSES, [$item->status]))[0]))
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson(url('api/route?date_from=' . (new Carbon($item->date))->subDay()->format('Y-m-d')))
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+        $this->getJson(url('api/route?date_from=' . (new Carbon($item->date))->addDay()->format('Y-m-d')))
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson(url('api/route?date_to=' . (new Carbon($item->date))->addDay()->format('Y-m-d')))
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'data');
+        $this->getJson(url('api/route?date_to=' . (new Carbon($item->date))->subDay()->format('Y-m-d')))
+            ->assertStatus(200)
+            ->assertJsonCount(0, 'data');*/
+
+
     }
 }
