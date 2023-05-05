@@ -46,9 +46,9 @@ class DummyService
 
             return $response->json();
         } catch (ServerException $e) {
-            $this->responseStatus = $e->getResponse()->getStatusCode();
-            $this->responseHeaders = $e->getResponse()->getHeaders();
-            $this->responseBody = $e->getResponse()->getBody()->getContents();
+            $this->responseStatus = $e->getCode();
+            $this->responseHeaders = $headers;
+            $this->responseBody = $e->getMessage();
             $this->requestBody = $data;
 
             $logData = [

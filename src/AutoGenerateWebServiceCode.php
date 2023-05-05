@@ -51,46 +51,52 @@ class AutoGenerateWebServiceCode extends Command
         file_put_contents(base_path('app/Services/Integrations/' . $fileName), $file_contents);
 
         //generate config log
-        $file_contents = file_get_contents(base_path('Config/logging.php'));
+        $file_contents = file_get_contents(base_path('config/logging.php'));
+        $newElement =
+            "        'web-service-" . $this->toKebabCase($webserviceName) . "-data' => [
+             'driver' => 'daily',
+             'path' => storage_path('logs/web-service-" . $this->toKebabCase($webserviceName) . "-data.log'),
+             'level' => env('LOG_LEVEL', 'debug'),
+             'days' => 14,
+       ]";
+        if (preg_match("/'emergency'\s*=>\s*\[(.*?)\]/s", $file_contents, $matches)) {
 
-        $file_contents = substr_replace($file_contents, "", -1);
-        $file_contents = substr_replace($file_contents, "", -1);
-        $file_contents = substr_replace($file_contents, "", -1);
-        $file_contents = substr_replace($file_contents, "", -1);
-        $file_contents = substr_replace($file_contents, "", -1);
-        $file_contents = substr_replace($file_contents, "", -1);
+            // Add a new element to the 'ses' array
 
+            $replacement = "$1,\n\n$newElement";
+            $file_contents = preg_replace("/('emergency'\s*=>\s*\[(.*?)\])/s", $replacement, $file_contents);
 
-        $file_contents .= "\n" . "'web-service-" . $this->toKebabCase($webserviceName) . "-data' => [
-        'driver' => 'daily',
-        'path' => storage_path('logs/web-service-" . $this->toKebabCase($webserviceName) . "-data.log'),
-        'level' => env('LOG_LEVEL', 'debug'),
-        'days' => 14,
-                 ],
-    ],
-];";
-
-        file_put_contents(base_path('Config/logging.php'), $file_contents);
+            // Output the new string
+        } else {
+            $file_contents = substr_replace($file_contents, "", -6);
+            $file_contents .= "\n" . $newElement . "\n],\n];";
+        }
+        file_put_contents(base_path('config/logging.php'), $file_contents);
 
         //generate config service
-        $file_contents = file_get_contents(base_path('Config/services.php'));
-        $file_contents = substr_replace($file_contents, "", -1);
-        $file_contents = substr_replace($file_contents, "", -1);
-        $file_contents = substr_replace($file_contents, "", -1);
-        $file_contents = substr_replace($file_contents, "", -1);
+        $file_contents = file_get_contents(base_path('config/services.php'));
+        
+        if (preg_match("/'ses'\s*=>\s*\[(.*?)\]/s", $file_contents, $matches)) {
 
-        $file_contents .= "\n" . "
-        '" . $this->toCamelCase($webserviceName) . "' => [
-        'connection_url' => env('" . strtoupper($webserviceName) . "_CONNECTION_URL')
-    ],
-];
-        ";
-        file_put_contents(base_path('Config/services.php'), $file_contents);
+            $newElement =
+        "     '" .$this->toCamelCase($webserviceName) . "' => [
+         'connection_url' => env('" . strtoupper($webserviceName) . "_CONNECTION_URL')
+    ]";
+            $replacement = "$1,\n\n$newElement";
+            $file_contents = preg_replace("/('ses'\s*=>\s*\[(.*?)\])/s", $replacement, $file_contents);
 
+        } else {
+            $file_contents = str_replace("];", "\n    '" .$this->toCamelCase($webserviceName) . "' => [
+          'connection_url' => env('" . strtoupper($webserviceName) . "_CONNECTION_URL')
+    ]
+];", $file_contents);
+        }
+        file_put_contents(base_path('config/services.php'),$file_contents);
+        
         $file_contents = file_get_contents(base_path('.env'));
         $file_contents .= strtoupper($webserviceName).'_CONNECTION_URL=';
         file_put_contents(base_path('.env'), $file_contents);
-        
+
         //generate test
         $file_contents = file_get_contents(__DIR__ . '/Templates/Laravel/WebService/Tests/DummyServiceTest.php.tpl');
         $file_contents = str_replace("Dummy", ucfirst($this->toCamelCase($webserviceName)), $file_contents);
@@ -106,12 +112,6 @@ class AutoGenerateWebServiceCode extends Command
 
         !file_exists(base_path('app/Exceptions/' . ucfirst($this->toCamelCase($webserviceName)))) ? mkdir(base_path('app/Exceptions/' . ucfirst($this->toCamelCase($webserviceName)))) : null;
         file_put_contents(base_path('app/Exceptions/' . ucfirst($this->toCamelCase($webserviceName)) . '/ResponseException.php'), $file_contents);
-
-    }
-
-    private function toPascalCase(string $str): string
-    {
-        return str_replace('_', '', ucwords($str, '_'));
     }
 
     private function toCamelCase(string $str): string
