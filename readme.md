@@ -1,4 +1,4 @@
-# Laravel 9 code generator from database tables
+# Laravel 10 code generator from database tables
 
 ## About
 
