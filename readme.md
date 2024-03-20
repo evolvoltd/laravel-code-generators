@@ -1,4 +1,4 @@
-# Laravel 9 code generator from database tables
+# Laravel 10 code generator from database tables
 
 ## About
 
@@ -28,7 +28,8 @@ $ composer require evolvo/laravel-code-generators
 
 1. Create your migrations and run them using `php artisan migrate`.
 2. Run `php artisan scaffold table_name` to generate Laravel code based on table structure.
-5. Run `php artisan scaffold table_name --vue` to generate Vue code based on table structure.
-5. Run `php artisan scaffold table_name --angular` to generate Angular code based on table structure.
+3. Run `php artisan scaffold table_name --vue` to generate Vue code based on table structure.
+4. Run `php artisan scaffold table_name --angular` to generate Angular code based on table structure.
+5. Run `php artisan generate:webservice WebServiceName` to generate web service integration code.
 
 
