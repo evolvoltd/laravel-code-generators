@@ -26,7 +26,7 @@ class Find extends FormRequest
     public function rules()
     {
         return [
-            "search" => "string|between|3:100",
+            "search" => "string|between:3,100",
         ];
     }
 }
