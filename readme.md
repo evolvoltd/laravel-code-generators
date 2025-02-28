@@ -1,4 +1,4 @@
-# Laravel 11 code generator from database tables
+# Laravel 12 code generator from database tables
 
 ## About
 
