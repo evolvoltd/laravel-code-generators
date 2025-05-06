@@ -245,7 +245,7 @@ class LaravelCodeGenerator
         //generate Filter FormRequest
         $file_contents = file_get_contents(__DIR__ . '/../Templates/Laravel/Requests/Dummy/Filter.php.tpl');
         $file_contents = str_replace("Dummy", $modelName, $file_contents);
-        $file_contents = str_replace("return []", 'return [' . PHP_EOL . '            ' . implode(',' . PHP_EOL . '            ', str_replace(['required|', 'nullable|'], '', $validationRules)) . '' . PHP_EOL . '        ]', $file_contents);
+        $file_contents = str_replace("return []", 'return [' . PHP_EOL . '            ' . implode(',' . PHP_EOL . '            ', array_merge(str_replace(['required|', 'nullable|'], '', $validationRules), ['"page" => "nullable|integer"'])) . '' . PHP_EOL . '        ]', $file_contents);
         file_put_contents(app_path('Http/Requests/' . $modelName . '/Filter' . '.php'), $file_contents);
 
         //generate Find FormRequest
