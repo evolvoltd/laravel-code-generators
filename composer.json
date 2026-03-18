@@ -3,7 +3,7 @@
     "description": "Artisan commands to generate laravel project code from existing database tables.",
     "type": "library",
     "require": {
-        "laravel/framework": "^12.0",
+        "laravel/framework": "^13.0",
         "php": ">=8.3.0"
     },
     "license": "MIT",
